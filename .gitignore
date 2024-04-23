@@ -1,0 +1,8 @@
+docker-compose.yaml
+config/local.yaml
+filebeat/filebeat.yml
+logstash/pipeline/logstash.conf
+logstash/config/logstash.yml
+.env
+.vscode
+logger-grpc.log

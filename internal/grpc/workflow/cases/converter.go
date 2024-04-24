@@ -25,12 +25,28 @@ func ConvertCaseListToProto(cases []models.Case) []*casesv1.Case {
 
 func ConvertTaskToProto(task models.Task) *casesv1.Task {
 	var formedAt string
-	if !task.FormedAt.IsZero() {
+	if task.FormedAt != nil {
 		formedAt = task.FormedAt.Format(time.RFC3339)
 	}
+
 	var completedAt string
-	if !task.CompletedAt.IsZero() {
+	if task.CompletedAt != nil {
 		completedAt = task.CompletedAt.Format(time.RFC3339)
+	}
+
+	var caseID int64
+	var caseTitle, caseSolution string
+	if task.Case != nil {
+		caseID = task.Case.ID
+		caseTitle = task.Case.Title
+		caseSolution = task.Case.Solution
+	}
+
+	var userID int64
+	var userEmail string
+	if task.User != nil {
+		userID = task.User.ID
+		userEmail = task.User.Email
 	}
 
 	return &casesv1.Task{
@@ -42,13 +58,13 @@ func ConvertTaskToProto(task models.Task) *casesv1.Task {
 		FormedAt:    &formedAt,
 		CompletedAt: &completedAt,
 		User: &casesv1.User{
-			Id:    task.User.ID,
-			Email: task.User.Email,
+			Id:    userID,
+			Email: userEmail,
 		},
 		Case: &casesv1.Case{
-			Id:       task.Case.ID,
-			Title:    task.Case.Title,
-			Solution: task.Case.Solution,
+			Id:       caseID,
+			Title:    caseTitle,
+			Solution: caseSolution,
 		},
 	}
 }

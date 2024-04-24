@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/adapters/db/postgresql"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/services/user"
@@ -31,7 +32,7 @@ type TaskProvider interface {
 }
 
 type ClusterSaver interface {
-	CreateCluster(ctx context.Context, cluster models.Cluster) error
+	SaveCluster(ctx context.Context, cluster models.Cluster) error
 	UpdateCluster(ctx context.Context, cluster models.Cluster) error
 }
 
@@ -62,12 +63,37 @@ func (s *TaskService) CreateTask(ctx context.Context, title string, description 
 		Title:       title,
 		Description: description,
 		Status:      models.TaskStatusOpen,
-		CreatedAt:   time.Now(),
 	}
 
 	log.Info("create tasks")
 	task, err := s.taskSaver.SaveTask(ctx, task)
 	if err != nil {
+		return models.Task{}, err
+	}
+
+	log.Info("create by index")
+	cluster, err := s.clusterProvider.ClusterByIndex(ctx, clusterIndex)
+	if err != nil {
+		log.Warn("cluster not found", err)
+		cluster = models.Cluster{
+			ClusterIndex: clusterIndex,
+			Name:         "Cluster " + fmt.Sprint(clusterIndex),
+			Frequency:    0,
+		}
+
+		log.Info("create cluster")
+		if err := s.clusterSaver.SaveCluster(ctx, cluster); err != nil {
+			log.WithError(err).Error("failed to create cluster")
+			return models.Task{}, err
+		}
+	}
+
+	task.ClusterID = &cluster.ID
+	task.Cluster = &cluster
+
+	log.Info("update cluster")
+	if err := s.taskSaver.UpdateTask(ctx, task.ID, task); err != nil {
+		log.WithError(err).Error("failed to update tasks")
 		return models.Task{}, err
 	}
 
@@ -141,7 +167,10 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 	switch task.Status {
 	case models.TaskStatusOpen:
 		task.Status = models.TaskStatusInProgress
-		task.UserEmail = user.Email
+
+		task.UserID = &user.ID
+		task.User = &user
+
 		currTime := time.Now()
 		task.FormedAt = &currTime
 	case models.TaskStatusInProgress:
@@ -153,7 +182,6 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 	}
 
 	log.Info("change tasks status")
-
 	if err := s.taskSaver.UpdateTask(ctx, taskID, task); err != nil {
 		log.WithError(err).Error("failed to update tasks")
 		return models.Task{}, err

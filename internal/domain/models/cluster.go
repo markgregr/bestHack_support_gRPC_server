@@ -1,9 +1,10 @@
 package models
 
 type Cluster struct {
-	ID             int64  `gorm:"primaryKey" json:"id"`
-	Name           string `json:"name"`
-	TreatmentCount int64  `json:"treatment_count"`
-	Tasks          []Task `json:"tasks"`
-	Cases          []Case `json:"cases"`
+	ID           int64  `gorm:"primaryKey" json:"id"`
+	ClusterIndex int64  `gorm:"unique" json:"cluster_index"`
+	Name         string `json:"name"`
+	Frequency    int64  `json:"frequency"`
+	Tasks        []Task `json:"tasks"`
+	Cases        []Case `json:"cases"`
 }

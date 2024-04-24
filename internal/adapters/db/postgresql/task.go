@@ -16,12 +16,15 @@ func (p *Postgres) TaskByID(ctx context.Context, id int64) (models.Task, error) 
 	const op = "postgresql.Postgres.TaskByID"
 
 	var task models.Task
-
-	if err := p.db.WithContext(ctx).Where("id = ?", id).First(&task).Error; err != nil {
+	if err := p.db.WithContext(ctx).Joins("User").Joins("Case").Joins("Cluster").First(&task, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return task, fmt.Errorf("%s: %w", op, ErrTaskNotFound)
+			return models.Task{}, fmt.Errorf("%s: %w", op, ErrTaskNotFound)
 		}
-		return task, fmt.Errorf("%s: %w", op, err)
+	}
+
+	// Дополнительная проверка, чтобы убедиться, что поле Cluster заполнено
+	if task.Cluster == nil {
+		return models.Task{}, fmt.Errorf("%s: cluster is nil for task with ID %d", op, id)
 	}
 
 	return task, nil
@@ -31,13 +34,10 @@ func (p *Postgres) ListTasks(ctx context.Context, status models.TaskStatus) ([]m
 	const op = "postgresql.Postgres.ListTasks"
 
 	var tasks []models.Task
-
-	if err := p.db.WithContext(ctx).Where("status = ?", status).Find(&tasks).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return tasks, fmt.Errorf("%s: %w", op, ErrTaskNotFound)
-		}
-		return tasks, fmt.Errorf("%s: %w", op, err)
+	if err := p.db.WithContext(ctx).Joins("User").Joins("Case").Joins("Cluster").Where("tasks.status = ?", status).Find(&tasks).Error; err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+
 	return tasks, nil
 }
 

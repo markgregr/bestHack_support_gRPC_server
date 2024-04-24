@@ -4,6 +4,7 @@ import (
 	"fmt"
 	grpcauth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	authgrpc "github.com/markgregr/bestHack_support_gRPC_server/internal/grpc/auth"
+	casesgrpc "github.com/markgregr/bestHack_support_gRPC_server/internal/grpc/workflow/cases"
 	tasksgrpc "github.com/markgregr/bestHack_support_gRPC_server/internal/grpc/workflow/tasks"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/lib/logger/handlers/logruspretty"
 	"github.com/markgregr/bestHack_support_gRPC_server/pkg/gmiddleware"
@@ -22,7 +23,7 @@ type App struct {
 	port       int
 }
 
-func New(log *logrus.Entry, authService authgrpc.AuthService, taskService tasksgrpc.TaskService, authMd *gmiddleware.Auth, port int, host string) *App { // Создаем экземпляр PrettyHandler для вывода красивых логов
+func New(log *logrus.Entry, authService authgrpc.AuthService, taskService tasksgrpc.TaskService, caseService casesgrpc.CaseService, authMd *gmiddleware.Auth, port int, host string) *App { // Создаем экземпляр PrettyHandler для вывода красивых логов
 	prettyHandler := logruspretty.NewPrettyHandler(os.Stdout)
 	logrus.SetFormatter(prettyHandler)
 	logEntry := logrus.NewEntry(logrus.StandardLogger())
@@ -35,6 +36,8 @@ func New(log *logrus.Entry, authService authgrpc.AuthService, taskService tasksg
 	authgrpc.Register(gRPCServer, authService)
 
 	tasksgrpc.Register(gRPCServer, taskService)
+
+	casesgrpc.Register(gRPCServer, caseService)
 
 	return &App{
 		log:        log,

@@ -12,7 +12,7 @@ import (
 )
 
 type TaskService interface {
-	CreateTask(ctx context.Context, title, description string, clusterID int64) (models.Task, error)
+	CreateTask(ctx context.Context, title, description string, clusterIndex int64) (models.Task, error)
 	GetTask(ctx context.Context, taskID int64) (models.Task, error)
 	ListTasks(ctx context.Context, status models.TaskStatus) ([]models.Task, error)
 	ChangeTaskStatus(ctx context.Context, taskID int64) (models.Task, error)
@@ -28,7 +28,7 @@ func Register(gRPC *grpc.Server, taskService TaskService) {
 }
 
 func (s *serverAPI) CreateTask(ctx context.Context, req *tasksv1.CreateTaskRequest) (*tasksv1.Task, error) {
-	task, err := s.taskService.CreateTask(ctx, req.GetTitle(), req.GetDescription(), req.GetClusterId())
+	task, err := s.taskService.CreateTask(ctx, req.GetTitle(), req.GetDescription(), req.GetClusterIndex())
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}

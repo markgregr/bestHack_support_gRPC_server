@@ -17,6 +17,7 @@ type TaskService struct {
 	taskProvider    TaskProvider
 	clusterSaver    ClusterSaver
 	clusterProvider ClusterProvider
+	caseProvider    CaseProvider
 
 	userService user.UserService
 }
@@ -40,22 +41,27 @@ type ClusterProvider interface {
 	ClusterByIndex(ctx context.Context, index int64) (models.Cluster, error)
 }
 
+type CaseProvider interface {
+	CaseByID(ctx context.Context, caseID int64) (models.Case, error)
+}
+
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
-func New(log *logrus.Logger, taskSaver TaskSaver, taskProvider TaskProvider, clusterProvider ClusterProvider, clusterSaver ClusterSaver, userService user.UserService) *TaskService {
+func New(log *logrus.Logger, taskSaver TaskSaver, taskProvider TaskProvider, clusterProvider ClusterProvider, clusterSaver ClusterSaver, caseProvider CaseProvider, userService user.UserService) *TaskService {
 	return &TaskService{
 		log:             log,
 		taskSaver:       taskSaver,
 		taskProvider:    taskProvider,
 		clusterSaver:    clusterSaver,
 		clusterProvider: clusterProvider,
+		caseProvider:    caseProvider,
 		userService:     userService,
 	}
 }
 
-func (s *TaskService) CreateTask(ctx context.Context, title string, description string, clusterIndex int64) (models.Task, error) {
+func (s *TaskService) CreateTask(ctx context.Context, title string, description string, clusterIndex int64, frequency int64) (models.Task, error) {
 	const op = "TaskService.CreateTask"
 	log := s.log.WithField("op", op)
 
@@ -66,7 +72,7 @@ func (s *TaskService) CreateTask(ctx context.Context, title string, description 
 		cluster = models.Cluster{
 			ClusterIndex: clusterIndex,
 			Name:         "Cluster " + fmt.Sprint(clusterIndex),
-			Frequency:    0,
+			Frequency:    frequency,
 		}
 
 		log.Info("create cluster")
@@ -188,6 +194,45 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 		}
 
 		log.WithError(err).Error("failed to get tasks")
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (s *TaskService) AddCaseToTask(ctx context.Context, taskID, caseID int64) (models.Task, error) {
+	const op = "TaskService.AddCaseToTask"
+	log := s.log.WithField("op", op)
+
+	log.Info("add case to task")
+	task, err := s.taskProvider.TaskByID(ctx, taskID)
+	if err != nil {
+		if errors.Is(err, postgresql.ErrTaskNotFound) {
+			log.Warn("tasks not found", err)
+			return models.Task{}, ErrInvalidCredentials
+		}
+
+		log.WithError(err).Error("failed to get tasks")
+		return models.Task{}, err
+	}
+
+	caseItem, err := s.caseProvider.CaseByID(ctx, caseID)
+	if err != nil {
+		if errors.Is(err, postgresql.ErrCaseNotFound) {
+			log.Warn("case not found", err)
+			return models.Task{}, ErrInvalidCredentials
+		}
+
+		log.WithError(err).Error("failed to get case")
+		return models.Task{}, err
+
+	}
+	task.CaseID = &caseID
+	task.Case = &caseItem
+
+	log.Info("change tasks status")
+	if err := s.taskSaver.UpdateTask(ctx, taskID, task); err != nil {
+		log.WithError(err).Error("failed to update tasks")
 		return models.Task{}, err
 	}
 

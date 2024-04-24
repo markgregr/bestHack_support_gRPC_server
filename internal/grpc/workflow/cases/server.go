@@ -2,21 +2,20 @@ package cases
 
 import (
 	"context"
-	"errors"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
-	"github.com/markgregr/bestHack_support_gRPC_server/internal/services/workflow/cases"
 	casesv1 "github.com/markgregr/bestHack_support_protos/gen/go/workflow/cases"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type CaseService interface {
 	CreateCase(ctx context.Context, title, solution string, clusterID int64) (models.Case, error)
-	GetCase(ctx context.Context, id int64) (models.Case, error)
-	ListCases(ctx context.Context) ([]models.Case, error)
-	GetCluster(ctx context.Context, id int64) (models.Cluster, error)
+	UpdateCase(ctx context.Context, id int64, title, solution string) (models.Case, error)
+	DeleteCase(ctx context.Context, id int64) error
+	ListClusters(ctx context.Context, empty *empty.Empty) ([]models.Cluster, error)
+	GetCasesFromCluster(ctx context.Context, clusterID int64) ([]models.Case, error)
 }
 
 type serverAPI struct {
@@ -36,32 +35,34 @@ func (s *serverAPI) CreateCase(ctx context.Context, req *casesv1.CreateCaseReque
 	return ConvertCaseToProto(caseItem), nil
 }
 
-func (s *serverAPI) GetCase(ctx context.Context, req *casesv1.GetCaseRequest) (*casesv1.Case, error) {
-	caseItem, err := s.caseService.GetCase(ctx, req.GetId())
+func (s *serverAPI) UpdateCase(ctx context.Context, req *casesv1.UpdateCaseRequest) (*casesv1.Case, error) {
+	caseItem, err := s.caseService.UpdateCase(ctx, req.GetId(), req.GetTitle(), req.GetSolution())
 	if err != nil {
-		if errors.Is(err, cases.ErrInvalidCredentials) {
-			return nil, status.Error(codes.NotFound, "invalid credentials")
-		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return ConvertCaseToProto(caseItem), nil
 }
 
-func (s *serverAPI) ListCases(ctx context.Context, empty *emptypb.Empty) (*casesv1.ListCasesResponse, error) {
-	cases, err := s.caseService.ListCases(ctx)
+func (s *serverAPI) DeleteCase(ctx context.Context, req *casesv1.DeleteCaseRequest) (*empty.Empty, error) {
+	err := s.caseService.DeleteCase(ctx, req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
-	return &casesv1.ListCasesResponse{Cases: ConvertCaseListToProto(cases)}, nil
+	return &empty.Empty{}, nil
 }
 
-func (s *serverAPI) GetCluster(ctx context.Context, req *casesv1.GetClusterRequest) (*casesv1.Cluster, error) {
-	cluster, err := s.caseService.GetCluster(ctx, req.GetId())
+func (s *serverAPI) ListClusters(ctx context.Context, req *empty.Empty) (*casesv1.ListClustersResponse, error) {
+	clusters, err := s.caseService.ListClusters(ctx, req)
 	if err != nil {
-		if errors.Is(err, cases.ErrInvalidCredentials) {
-			return nil, status.Error(codes.NotFound, "invalid credentials")
-		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
-	return ConvertClusterToProto(cluster), nil
+	return &casesv1.ListClustersResponse{Clusters: ConvertClusterListToProto(clusters)}, nil
+}
+
+func (s *serverAPI) GetCasesFromCluster(ctx context.Context, req *casesv1.GetCasesFromClusterRequest) (*casesv1.GetCasesFromClusterResponse, error) {
+	cases, err := s.caseService.GetCasesFromCluster(ctx, req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &casesv1.GetCasesFromClusterResponse{Cases: ConvertCaseListToProto(cases)}, nil
 }

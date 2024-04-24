@@ -12,10 +12,11 @@ import (
 )
 
 type TaskService interface {
-	CreateTask(ctx context.Context, title, description string, clusterIndex int64) (models.Task, error)
+	CreateTask(ctx context.Context, title, description string, clusterIndex int64, frequency int64) (models.Task, error)
 	GetTask(ctx context.Context, taskID int64) (models.Task, error)
 	ListTasks(ctx context.Context, status models.TaskStatus) ([]models.Task, error)
 	ChangeTaskStatus(ctx context.Context, taskID int64) (models.Task, error)
+	AddCaseToTask(ctx context.Context, taskID, caseID int64) (models.Task, error)
 }
 
 type serverAPI struct {
@@ -28,7 +29,7 @@ func Register(gRPC *grpc.Server, taskService TaskService) {
 }
 
 func (s *serverAPI) CreateTask(ctx context.Context, req *tasksv1.CreateTaskRequest) (*tasksv1.Task, error) {
-	task, err := s.taskService.CreateTask(ctx, req.GetTitle(), req.GetDescription(), req.GetClusterIndex())
+	task, err := s.taskService.CreateTask(ctx, req.GetTitle(), req.GetDescription(), req.GetClusterIndex(), req.GetFrequency())
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -56,6 +57,17 @@ func (s *serverAPI) ListTasks(ctx context.Context, req *tasksv1.ListTasksRequest
 
 func (s *serverAPI) ChangeTaskStatus(ctx context.Context, req *tasksv1.ChangeTaskStatusRequest) (*tasksv1.Task, error) {
 	task, err := s.taskService.ChangeTaskStatus(ctx, req.GetTaskId())
+	if err != nil {
+		if errors.Is(err, tasks.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return ConvertTaskToProto(task), nil
+}
+
+func (s *serverAPI) AddCaseToTask(ctx context.Context, req *tasksv1.AddCaseToTaskRequest) (*tasksv1.Task, error) {
+	task, err := s.taskService.AddCaseToTask(ctx, req.GetTaskId(), req.GetCaseId())
 	if err != nil {
 		if errors.Is(err, tasks.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")

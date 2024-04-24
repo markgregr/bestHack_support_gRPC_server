@@ -15,9 +15,15 @@ func (p *Postgres) SaveCase(ctx context.Context, caseItem models.Case) (models.C
 	return caseItem, err
 }
 
-func (p *Postgres) UpdateCase(ctx context.Context, id int64, caseItem models.Case) error {
-	err := p.db.WithContext(ctx).Model(&models.Case{}).Where("id = ?", id).Updates(&caseItem).Error
+func (p *Postgres) DeleteCase(ctx context.Context, id int64) error {
+	err := p.db.WithContext(ctx).Where("id = ?", id).Delete(&models.Case{}).Error
 	return err
+}
+
+func (p *Postgres) UpdateCase(ctx context.Context, caseItem models.Case) (models.Case, error) {
+	err := p.db.WithContext(ctx).Save(&caseItem).Error
+	return caseItem, err
+
 }
 
 func (p *Postgres) CaseByID(ctx context.Context, id int64) (models.Case, error) {
@@ -26,8 +32,8 @@ func (p *Postgres) CaseByID(ctx context.Context, id int64) (models.Case, error) 
 	return caseItem, err
 }
 
-func (p *Postgres) ListCases(ctx context.Context) ([]models.Case, error) {
+func (p *Postgres) ListCasesByClusterID(ctx context.Context, clusterID int64) ([]models.Case, error) {
 	var cases []models.Case
-	err := p.db.WithContext(ctx).Find(&cases).Error
+	err := p.db.WithContext(ctx).Joins("Cluster").Where("cluster_id = ?", clusterID).Find(&cases).Error
 	return cases, err
 }

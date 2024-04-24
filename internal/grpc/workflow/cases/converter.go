@@ -3,7 +3,6 @@ package cases
 import (
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
 	casesv1 "github.com/markgregr/bestHack_support_protos/gen/go/workflow/cases"
-	log "github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -25,29 +24,13 @@ func ConvertCaseListToProto(cases []models.Case) []*casesv1.Case {
 }
 
 func ConvertTaskToProto(task models.Task) *casesv1.Task {
-	createdAt := task.CreatedAt.Format(time.RFC3339)
-	formedAt := ""
-	if task.FormedAt != nil {
+	var formedAt string
+	if !task.FormedAt.IsZero() {
 		formedAt = task.FormedAt.Format(time.RFC3339)
 	}
-	completedAt := ""
-	if task.CompletedAt != nil {
+	var completedAt string
+	if !task.CompletedAt.IsZero() {
 		completedAt = task.CompletedAt.Format(time.RFC3339)
-	}
-
-	var caseID int64
-	var caseTitle, caseSolution string
-	if task.Case != nil {
-		caseID = task.Case.ID
-		caseTitle = task.Case.Title
-		caseSolution = task.Case.Solution
-	}
-
-	var userID int64
-	var userEmail string
-	if task.User != nil {
-		userID = task.User.ID
-		userEmail = task.User.Email
 	}
 
 	return &casesv1.Task{
@@ -55,15 +38,17 @@ func ConvertTaskToProto(task models.Task) *casesv1.Task {
 		Title:       task.Title,
 		Description: task.Description,
 		Status:      casesv1.TaskStatus(task.Status),
-		CreatedAt:   createdAt,
-		FormedAt:    formedAt,
-		CompletedAt: completedAt,
+		CreatedAt:   task.CreatedAt.Format(time.RFC3339),
+		FormedAt:    &formedAt,
+		CompletedAt: &completedAt,
 		User: &casesv1.User{
-			Id:    userID,
-			Email: userEmail},
-		Case: &casesv1.Case{Id: caseID,
-			Title:    caseTitle,
-			Solution: caseSolution,
+			Id:    task.User.ID,
+			Email: task.User.Email,
+		},
+		Case: &casesv1.Case{
+			Id:       task.Case.ID,
+			Title:    task.Case.Title,
+			Solution: task.Case.Solution,
 		},
 	}
 }
@@ -77,7 +62,6 @@ func ConvertTaskListToProto(tasks []models.Task) []*casesv1.Task {
 }
 
 func ConvertClusterToProto(cluster models.Cluster) *casesv1.Cluster {
-	log.WithField("cluster", cluster).Info("CLUSTER ")
 	return &casesv1.Cluster{
 		Id:        cluster.ID,
 		Name:      cluster.Name,

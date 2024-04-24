@@ -59,18 +59,6 @@ func (s *TaskService) CreateTask(ctx context.Context, title string, description 
 	const op = "TaskService.CreateTask"
 	log := s.log.WithField("op", op)
 
-	task := models.Task{
-		Title:       title,
-		Description: description,
-		Status:      models.TaskStatusOpen,
-	}
-
-	log.Info("create tasks")
-	task, err := s.taskSaver.SaveTask(ctx, task)
-	if err != nil {
-		return models.Task{}, err
-	}
-
 	log.Info("create by index")
 	cluster, err := s.clusterProvider.ClusterByIndex(ctx, clusterIndex)
 	if err != nil {
@@ -88,12 +76,17 @@ func (s *TaskService) CreateTask(ctx context.Context, title string, description 
 		}
 	}
 
-	task.ClusterID = &cluster.ID
-	task.Cluster = &cluster
+	task := models.Task{
+		Title:       title,
+		Description: description,
+		Status:      models.TaskStatusOpen,
+		ClusterID:   &cluster.ID,
+		Cluster:     &cluster,
+	}
 
-	log.Info("update cluster")
-	if err := s.taskSaver.UpdateTask(ctx, task.ID, task); err != nil {
-		log.WithError(err).Error("failed to update tasks")
+	log.Info("create tasks")
+	task, err = s.taskSaver.SaveTask(ctx, task)
+	if err != nil {
 		return models.Task{}, err
 	}
 

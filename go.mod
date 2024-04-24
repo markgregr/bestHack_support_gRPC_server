@@ -11,7 +11,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/markgregr/FruitfulFriends-protos v0.0.8
-	github.com/markgregr/bestHack_support_protos v0.0.28
+	github.com/markgregr/bestHack_support_protos v0.0.29
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0

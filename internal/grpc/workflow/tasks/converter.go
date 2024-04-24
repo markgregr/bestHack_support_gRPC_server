@@ -3,18 +3,22 @@ package tasks
 import (
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
 	tasksv1 "github.com/markgregr/bestHack_support_protos/gen/go/workflow/tasks"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
 func ConvertTaskToProto(task models.Task) *tasksv1.Task {
-	var formedAt string
-	if task.FormedAt != nil {
-		formedAt = task.FormedAt.Format(time.RFC3339)
-	}
 
-	var completedAt string
+	log.WithField("task", task).Info("convert task to proto")
+
+	var formedAt, completedAt *string
+	if task.FormedAt != nil {
+		formattedFormedAt := task.FormedAt.Format(time.RFC3339)
+		formedAt = &formattedFormedAt
+	}
 	if task.CompletedAt != nil {
-		completedAt = task.CompletedAt.Format(time.RFC3339)
+		formattedCompletedAt := task.CompletedAt.Format(time.RFC3339)
+		completedAt = &formattedCompletedAt
 	}
 
 	var caseID, caseClusterID int64
@@ -59,8 +63,8 @@ func ConvertTaskToProto(task models.Task) *tasksv1.Task {
 			Frequency: clusterFrequency,
 		},
 		CreatedAt:   task.CreatedAt.Format(time.RFC3339),
-		FormedAt:    &formedAt,
-		CompletedAt: &completedAt,
+		FormedAt:    formedAt,
+		CompletedAt: completedAt,
 		User: &tasksv1.User{
 			Id:    userID,
 			Email: userEmail,

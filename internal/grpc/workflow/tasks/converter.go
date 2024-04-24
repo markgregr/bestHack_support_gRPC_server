@@ -8,7 +8,6 @@ import (
 )
 
 func ConvertTaskToProto(task models.Task) *tasksv1.Task {
-
 	log.WithField("task", task).Info("convert task to proto")
 
 	var formedAt, completedAt *string

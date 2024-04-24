@@ -3,15 +3,28 @@ package cases
 import (
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
 	casesv1 "github.com/markgregr/bestHack_support_protos/gen/go/workflow/cases"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
 func ConvertCaseToProto(caseItem models.Case) *casesv1.Case {
+	var clusterID int64
+	var clusterName string
+	var clusterFrequency int64
+	if caseItem.Cluster != nil {
+		clusterID = caseItem.Cluster.ID
+		clusterName = caseItem.Cluster.Name
+		clusterFrequency = caseItem.Cluster.Frequency
+	}
+
 	return &casesv1.Case{
 		Id:       caseItem.ID,
 		Title:    caseItem.Title,
 		Solution: caseItem.Solution,
-		Cluster:  &casesv1.Cluster{Id: caseItem.Cluster.ID, Name: caseItem.Cluster.Name, Frequency: caseItem.Cluster.Frequency},
+		Cluster: &casesv1.Cluster{Id: clusterID,
+			Name:      clusterName,
+			Frequency: clusterFrequency,
+		},
 	}
 }
 
@@ -24,14 +37,16 @@ func ConvertCaseListToProto(cases []models.Case) []*casesv1.Case {
 }
 
 func ConvertTaskToProto(task models.Task) *casesv1.Task {
-	var formedAt string
-	if task.FormedAt != nil {
-		formedAt = task.FormedAt.Format(time.RFC3339)
-	}
+	log.WithField("task", task).Info("convert task to proto")
 
-	var completedAt string
+	var formedAt, completedAt *string
+	if task.FormedAt != nil {
+		formattedFormedAt := task.FormedAt.Format(time.RFC3339)
+		formedAt = &formattedFormedAt
+	}
 	if task.CompletedAt != nil {
-		completedAt = task.CompletedAt.Format(time.RFC3339)
+		formattedCompletedAt := task.CompletedAt.Format(time.RFC3339)
+		completedAt = &formattedCompletedAt
 	}
 
 	var caseID int64
@@ -55,8 +70,8 @@ func ConvertTaskToProto(task models.Task) *casesv1.Task {
 		Description: task.Description,
 		Status:      casesv1.TaskStatus(task.Status),
 		CreatedAt:   task.CreatedAt.Format(time.RFC3339),
-		FormedAt:    &formedAt,
-		CompletedAt: &completedAt,
+		FormedAt:    formedAt,
+		CompletedAt: completedAt,
 		User: &casesv1.User{
 			Id:    userID,
 			Email: userEmail,

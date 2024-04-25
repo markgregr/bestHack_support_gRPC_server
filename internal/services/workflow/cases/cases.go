@@ -136,7 +136,7 @@ func (s *CaseService) GetCasesFromCluster(ctx context.Context, clusterID int64) 
 	return cases, nil
 }
 
-func (s *CaseService) UpdateClusterName(ctx context.Context, clusterID int64) (models.Cluster, error) {
+func (s *CaseService) UpdateClusterName(ctx context.Context, clusterID int64, clusterName string) (models.Cluster, error) {
 	const op = "CaseService.UpdateClusterName"
 	log := s.log.WithField("op", op)
 
@@ -146,7 +146,7 @@ func (s *CaseService) UpdateClusterName(ctx context.Context, clusterID int64) (m
 		return models.Cluster{}, err
 	}
 
-	cluster.Name = "New name"
+	cluster.Name = clusterName
 
 	updatedCluster, err := s.clusterProvider.UpdateCluster(ctx, cluster)
 	if err != nil {

@@ -16,7 +16,7 @@ type CaseService interface {
 	DeleteCase(ctx context.Context, id int64) error
 	ListClusters(ctx context.Context, empty *empty.Empty) ([]models.Cluster, error)
 	GetCasesFromCluster(ctx context.Context, clusterID int64) ([]models.Case, error)
-	UpdateClusterName(ctx context.Context, clusterID int64) (models.Cluster, error)
+	UpdateClusterName(ctx context.Context, clusterID int64, clusterName string) (models.Cluster, error)
 }
 
 type serverAPI struct {
@@ -69,7 +69,7 @@ func (s *serverAPI) GetCasesFromCluster(ctx context.Context, req *casesv1.GetCas
 }
 
 func (s *serverAPI) UpdateClusterName(ctx context.Context, req *casesv1.UpdateClusterNameRequest) (*casesv1.Cluster, error) {
-	cluster, err := s.caseService.UpdateClusterName(ctx, req.GetId())
+	cluster, err := s.caseService.UpdateClusterName(ctx, req.GetId(), req.GetName())
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}

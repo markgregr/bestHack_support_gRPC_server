@@ -34,11 +34,11 @@ type TaskProvider interface {
 
 type ClusterSaver interface {
 	SaveCluster(ctx context.Context, cluster models.Cluster) error
-	UpdateCluster(ctx context.Context, cluster models.Cluster) error
 }
 
 type ClusterProvider interface {
 	ClusterByIndex(ctx context.Context, index int64) (models.Cluster, error)
+	UpdateCluster(ctx context.Context, cluster models.Cluster) (models.Cluster, error)
 }
 
 type CaseProvider interface {

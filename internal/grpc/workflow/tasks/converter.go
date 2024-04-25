@@ -22,7 +22,7 @@ func ConvertTaskToProto(task models.Task) *tasksv1.Task {
 
 	var solution *string
 	if task.Solution != nil {
-		sol := *solution
+		sol := *task.Solution
 		solution = &sol
 	}
 

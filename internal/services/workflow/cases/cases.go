@@ -32,7 +32,7 @@ type CaseProvider interface {
 type ClusterProvider interface {
 	ClusterByID(ctx context.Context, clusterID int64) (models.Cluster, error)
 	ListClusters(ctx context.Context) ([]models.Cluster, error)
-	UpdateCluster(ctx context.Context, cluster models.Cluster) (models.Case, error)
+	UpdateCluster(ctx context.Context, cluster models.Cluster) (models.Cluster, error)
 }
 
 var (
@@ -136,14 +136,14 @@ func (s *CaseService) GetCasesFromCluster(ctx context.Context, clusterID int64) 
 	return cases, nil
 }
 
-func (s *CaseService) UpdateClusterName(ctx context.Context, clusterID int64) (models.Case, error) {
+func (s *CaseService) UpdateClusterName(ctx context.Context, clusterID int64) (models.Cluster, error) {
 	const op = "CaseService.UpdateClusterName"
 	log := s.log.WithField("op", op)
 
 	cluster, err := s.clusterProvider.ClusterByID(ctx, clusterID)
 	if err != nil {
 		log.WithError(err).Error("failed to get cluster")
-		return models.Case{}, err
+		return models.Cluster{}, err
 	}
 
 	cluster.Name = "New name"
@@ -151,7 +151,7 @@ func (s *CaseService) UpdateClusterName(ctx context.Context, clusterID int64) (m
 	updatedCluster, err := s.clusterProvider.UpdateCluster(ctx, cluster)
 	if err != nil {
 		log.WithError(err).Error("failed to update cluster")
-		return models.Case{}, err
+		return models.Cluster{}, err
 	}
 
 	return updatedCluster, nil

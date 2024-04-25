@@ -32,6 +32,7 @@ type CaseProvider interface {
 type ClusterProvider interface {
 	ClusterByID(ctx context.Context, clusterID int64) (models.Cluster, error)
 	ListClusters(ctx context.Context) ([]models.Cluster, error)
+	UpdateCluster(ctx context.Context, cluster models.Cluster) (models.Case, error)
 }
 
 var (
@@ -73,55 +74,6 @@ func (s *CaseService) CreateCase(ctx context.Context, title string, solution str
 
 	return createdCase, nil
 }
-
-//func (s *CaseService) GetCase(ctx context.Context, id int64) (models.Case, error) {
-//	const op = "CaseService.GetCase"
-//	log := s.log.WithField("op", op)
-//
-//	caseItem, err := s.caseProvider.CaseByID(ctx, id)
-//	if err != nil {
-//		if errors.Is(err, postgresql.ErrCaseNotFound) {
-//			log.Warn("case not found", err)
-//			return models.Case{}, ErrInvalidCredentials
-//		}
-//
-//		log.WithError(err).Error("failed to get case")
-//		return models.Case{}, err
-//	}
-//
-//	return caseItem, nil
-//}
-//
-//func (s *CaseService) ListCases(ctx context.Context) ([]models.Case, error) {
-//	const op = "CaseService.ListCases"
-//	log := s.log.WithField("op", op)
-//
-//	cases, err := s.caseProvider.ListCases(ctx)
-//	if err != nil {
-//		log.WithError(err).Error("failed to list cases")
-//		return nil, err
-//	}
-//
-//	return cases, nil
-//}
-//
-//func (s *CaseService) GetCluster(ctx context.Context, clusterID int64) (models.Cluster, error) {
-//	const op = "CaseService.GetCluster"
-//	log := s.log.WithField("op", op)
-//
-//	cluster, err := s.clusterProvider.ClusterByID(ctx, clusterID)
-//	if err != nil {
-//		if errors.Is(err, postgresql.ErrClusterNotFound) {
-//			log.Warn("cluster not found", err)
-//			return models.Cluster{}, ErrInvalidCredentials
-//		}
-//
-//		log.WithError(err).Error("failed to get cluster")
-//		return models.Cluster{}, err
-//	}
-//
-//	return cluster, nil
-//}
 
 func (s *CaseService) UpdateCase(ctx context.Context, id int64, title string, solution string) (models.Case, error) {
 	const op = "CaseService.UpdateCase"
@@ -182,4 +134,25 @@ func (s *CaseService) GetCasesFromCluster(ctx context.Context, clusterID int64) 
 	}
 
 	return cases, nil
+}
+
+func (s *CaseService) UpdateClusterName(ctx context.Context, clusterID int64) (models.Case, error) {
+	const op = "CaseService.UpdateClusterName"
+	log := s.log.WithField("op", op)
+
+	cluster, err := s.clusterProvider.ClusterByID(ctx, clusterID)
+	if err != nil {
+		log.WithError(err).Error("failed to get cluster")
+		return models.Case{}, err
+	}
+
+	cluster.Name = "New name"
+
+	updatedCluster, err := s.clusterProvider.UpdateCluster(ctx, cluster)
+	if err != nil {
+		log.WithError(err).Error("failed to update cluster")
+		return models.Case{}, err
+	}
+
+	return updatedCluster, nil
 }

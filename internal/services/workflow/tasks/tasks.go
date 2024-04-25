@@ -238,3 +238,30 @@ func (s *TaskService) AddCaseToTask(ctx context.Context, taskID, caseID int64) (
 
 	return task, nil
 }
+
+func (s *TaskService) AddSolutionToTask(ctx context.Context, taskID int64, solution string) (models.Task, error) {
+	const op = "TaskService.AddCaseToTask"
+	log := s.log.WithField("op", op)
+
+	log.Info("add case to task")
+	task, err := s.taskProvider.TaskByID(ctx, taskID)
+	if err != nil {
+		if errors.Is(err, postgresql.ErrTaskNotFound) {
+			log.Warn("tasks not found", err)
+			return models.Task{}, ErrInvalidCredentials
+		}
+
+		log.WithError(err).Error("failed to get tasks")
+		return models.Task{}, err
+	}
+
+	task.Solution = &solution
+
+	log.Info("change tasks status")
+	if err := s.taskSaver.UpdateTask(ctx, taskID, task); err != nil {
+		log.WithError(err).Error("failed to update tasks")
+		return models.Task{}, err
+	}
+
+	return task, nil
+}

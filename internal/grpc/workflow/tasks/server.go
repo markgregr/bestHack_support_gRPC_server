@@ -17,6 +17,7 @@ type TaskService interface {
 	ListTasks(ctx context.Context, status models.TaskStatus) ([]models.Task, error)
 	ChangeTaskStatus(ctx context.Context, taskID int64) (models.Task, error)
 	AddCaseToTask(ctx context.Context, taskID, caseID int64) (models.Task, error)
+	AddSolutionToTask(ctx context.Context, taskID int64, solution string) (models.Task, error)
 }
 
 type serverAPI struct {
@@ -68,6 +69,17 @@ func (s *serverAPI) ChangeTaskStatus(ctx context.Context, req *tasksv1.ChangeTas
 
 func (s *serverAPI) AddCaseToTask(ctx context.Context, req *tasksv1.AddCaseToTaskRequest) (*tasksv1.Task, error) {
 	task, err := s.taskService.AddCaseToTask(ctx, req.GetTaskId(), req.GetCaseId())
+	if err != nil {
+		if errors.Is(err, tasks.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return ConvertTaskToProto(task), nil
+}
+
+func (s *serverAPI) AddSolutionToTask(ctx context.Context, req *tasksv1.AddSolutionToTaskRequest) (*tasksv1.Task, error) {
+	task, err := s.taskService.AddSolutionToTask(ctx, req.GetTaskId(), req.GetSolutiom())
 	if err != nil {
 		if errors.Is(err, tasks.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")

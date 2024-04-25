@@ -6,6 +6,7 @@ type Task struct {
 	ID          int64      `gorm:"primaryKey" json:"id"`
 	Title       string     `gorm:"not null" json:"title`
 	Description string     `gorm:"not null" json:"description`
+	Solution    *string    `json:"solution`
 	Status      TaskStatus `gorm:"not null" json:"status`
 	CreatedAt   time.Time  `gorm:"autoCreateTime" gorm:"not null" json:"created_at`
 	FormedAt    *time.Time `json:"formed_at`

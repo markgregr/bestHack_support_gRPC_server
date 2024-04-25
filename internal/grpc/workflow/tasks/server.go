@@ -79,7 +79,7 @@ func (s *serverAPI) AddCaseToTask(ctx context.Context, req *tasksv1.AddCaseToTas
 }
 
 func (s *serverAPI) AddSolutionToTask(ctx context.Context, req *tasksv1.AddSolutionToTaskRequest) (*tasksv1.Task, error) {
-	task, err := s.taskService.AddSolutionToTask(ctx, req.GetTaskId(), req.GetSolutiom())
+	task, err := s.taskService.AddSolutionToTask(ctx, req.GetTaskId(), req.GetSolution())
 	if err != nil {
 		if errors.Is(err, tasks.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")

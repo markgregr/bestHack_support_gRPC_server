@@ -20,6 +20,12 @@ func ConvertTaskToProto(task models.Task) *tasksv1.Task {
 		completedAt = &formattedCompletedAt
 	}
 
+	var solution *string
+	if task.Solution != nil {
+		sol := *solution
+		solution = &sol
+	}
+
 	var caseID, caseClusterID int64
 	var caseTitle, caseSolution string
 	if task.Case != nil {
@@ -51,7 +57,7 @@ func ConvertTaskToProto(task models.Task) *tasksv1.Task {
 		Id:          task.ID,
 		Title:       task.Title,
 		Description: task.Description,
-		Solution:    task.Solution,
+		Solution:    solution,
 		Status:      tasksv1.TaskStatus(task.Status),
 		Case: &tasksv1.Case{Id: caseID,
 			ClusterId: caseClusterID,

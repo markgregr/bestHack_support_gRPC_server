@@ -16,9 +16,14 @@ func (p *Postgres) SaveCluster(ctx context.Context, cluster models.Cluster) erro
 	return p.db.WithContext(ctx).Create(&cluster).Error
 }
 
-func (p *Postgres) UpdateCluster(ctx context.Context, cluster models.Cluster) error {
+func (p *Postgres) UpdateCluster(ctx context.Context, cluster models.Cluster) (models.Cluster, error) {
 	const op = "postgresql.Postgres.UpdateCluster"
-	return p.db.WithContext(ctx).Save(&cluster).Error
+
+	if err := p.db.WithContext(ctx).Save(&cluster).Error; err != nil {
+		return models.Cluster{}, err
+	}
+
+	return cluster, nil
 }
 
 func (p *Postgres) ClusterByID(ctx context.Context, id int64) (models.Cluster, error) {

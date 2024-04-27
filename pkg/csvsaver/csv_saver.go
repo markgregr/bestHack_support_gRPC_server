@@ -50,7 +50,7 @@ func AddDataToJSON(jsonFile string, data ClusterData, log *logrus.Logger) error 
 		return err
 	}
 
-	err = os.WriteFile(jsonFile, newData, 0666)
+	err = os.WriteFile("/app/data/input.json", newData, 0666)
 	if err != nil {
 		log.WithError(err).Error("failed to write file")
 		return err

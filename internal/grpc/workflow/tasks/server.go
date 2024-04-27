@@ -12,7 +12,7 @@ import (
 )
 
 type TaskService interface {
-	CreateTask(ctx context.Context, title, description string, clusterIndex int64, frequency int64) (models.Task, error)
+	CreateTask(ctx context.Context, title, description string, clusterIndex int64, frequency int64, avarage_duration float32) (models.Task, error)
 	GetTask(ctx context.Context, taskID int64) (models.Task, error)
 	ListTasks(ctx context.Context, status models.TaskStatus) ([]models.Task, error)
 	ChangeTaskStatus(ctx context.Context, taskID int64) (models.Task, error)
@@ -20,6 +20,7 @@ type TaskService interface {
 	AddSolutionToTask(ctx context.Context, taskID int64, solution string) (models.Task, error)
 	RemoveCaseFromTask(ctx context.Context, taskID int64) (models.Task, error)
 	RemoveSolutionFromTask(ctx context.Context, taskID int64) (models.Task, error)
+	AppointUserToTask(ctx context.Context, taskID int64) (models.Task, error)
 }
 
 type serverAPI struct {
@@ -32,7 +33,7 @@ func Register(gRPC *grpc.Server, taskService TaskService) {
 }
 
 func (s *serverAPI) CreateTask(ctx context.Context, req *tasksv1.CreateTaskRequest) (*tasksv1.Task, error) {
-	task, err := s.taskService.CreateTask(ctx, req.GetTitle(), req.GetDescription(), req.GetClusterIndex(), req.GetFrequency())
+	task, err := s.taskService.CreateTask(ctx, req.GetTitle(), req.GetDescription(), req.GetClusterIndex(), req.GetFrequency(), req.GetAverageDuration())
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -104,6 +105,17 @@ func (s *serverAPI) RemoveCaseFromTask(ctx context.Context, req *tasksv1.RemoveC
 
 func (s *serverAPI) RemoveSolutionFromTask(ctx context.Context, req *tasksv1.RemoveSolutionFromTaskRequest) (*tasksv1.Task, error) {
 	task, err := s.taskService.RemoveSolutionFromTask(ctx, req.GetTaskId())
+	if err != nil {
+		if errors.Is(err, tasks.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return ConvertTaskToProto(task), nil
+}
+
+func (s *serverAPI) AppointUserToTask(ctx context.Context, req *tasksv1.AppointUserToTaskRequest) (*tasksv1.Task, error) {
+	task, err := s.taskService.AppointUserToTask(ctx, req.GetTaskId())
 	if err != nil {
 		if errors.Is(err, tasks.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")

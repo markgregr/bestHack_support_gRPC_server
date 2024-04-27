@@ -33,6 +33,7 @@ type TaskSaver interface {
 type TaskProvider interface {
 	TaskByID(ctx context.Context, taskID int64) (models.Task, error)
 	ListTasks(ctx context.Context, status models.TaskStatus) ([]models.Task, error)
+	UserMinAvarageDuration(ctx context.Context) (models.User, error)
 }
 
 type ClusterSaver interface {
@@ -66,7 +67,7 @@ func New(log *logrus.Logger, inputFileData, outputFileData string, taskSaver Tas
 	}
 }
 
-func (s *TaskService) CreateTask(ctx context.Context, title string, description string, clusterIndex int64, frequency int64) (models.Task, error) {
+func (s *TaskService) CreateTask(ctx context.Context, title string, description string, clusterIndex int64, frequency int64, avarage_duration float32) (models.Task, error) {
 	const op = "TaskService.CreateTask"
 	log := s.log.WithField("op", op)
 
@@ -88,11 +89,12 @@ func (s *TaskService) CreateTask(ctx context.Context, title string, description 
 	}
 
 	task := models.Task{
-		Title:       title,
-		Description: description,
-		Status:      models.TaskStatusOpen,
-		ClusterID:   &cluster.ID,
-		Cluster:     &cluster,
+		Title:           title,
+		Description:     description,
+		Status:          models.TaskStatusOpen,
+		AvarageDuration: avarage_duration,
+		ClusterID:       &cluster.ID,
+		Cluster:         &cluster,
 	}
 
 	log.Info("create tasks")
@@ -177,6 +179,12 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 
 		currTime := time.Now()
 		task.FormedAt = &currTime
+
+		err = s.userService.UpdateUserAvarageDuration(ctx, user.ID, user.AvarageDuration+task.AvarageDuration)
+		if err != nil {
+			log.WithError(err).Error("failed to update user avarage duration")
+			return models.Task{}, err
+		}
 	case models.TaskStatusInProgress:
 		task.Status = models.TaskStatusClosed
 		currTime := time.Now()
@@ -205,6 +213,13 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 			log.WithError(err).Error("failed to calculate average")
 			return models.Task{}, err
 		}
+
+		err = s.userService.UpdateUserAvarageDuration(ctx, user.ID, user.AvarageDuration+task.AvarageDuration)
+		if err != nil {
+			log.WithError(err).Error("failed to update user avarage duration")
+			return models.Task{}, err
+		}
+
 	default:
 		return models.Task{}, errors.New("invalid task status")
 	}
@@ -347,5 +362,46 @@ func (s *TaskService) RemoveSolutionFromTask(ctx context.Context, taskID int64) 
 		return models.Task{}, err
 	}
 
+	return task, nil
+}
+
+func (s *TaskService) AppointUserToTask(ctx context.Context, taskID int64) (models.Task, error) {
+	const op = "TaskService.AppointUserToTask"
+	log := s.log.WithField("op", op)
+
+	user, err := s.taskProvider.UserMinAvarageDuration(ctx)
+	if err != nil {
+		log.WithError(err).Error("failed to get user with min avarage duration")
+		return models.Task{}, err
+	}
+
+	task, err := s.taskProvider.TaskByID(ctx, taskID)
+	if err != nil {
+		if errors.Is(err, postgresql.ErrTaskNotFound) {
+			log.Warn("tasks not found", err)
+			return models.Task{}, ErrInvalidCredentials
+		}
+
+		log.WithError(err).Error("failed to get tasks")
+		return models.Task{}, err
+	}
+
+	task.UserID = &user.ID
+	task.User = &user
+
+	task.Status = models.TaskStatusInProgress
+	currTime := time.Now()
+	task.FormedAt = &currTime
+
+	log.Info("change tasks status")
+	if err := s.taskSaver.UpdateTask(ctx, taskID, task); err != nil {
+		log.WithError(err).Error("failed to update tasks")
+		return models.Task{}, err
+	}
+	err = s.userService.UpdateUserAvarageDuration(ctx, user.ID, user.AvarageDuration+task.AvarageDuration)
+	if err != nil {
+		log.WithError(err).Error("failed to update user avarage duration")
+		return models.Task{}, err
+	}
 	return task, nil
 }

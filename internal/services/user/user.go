@@ -18,6 +18,7 @@ type UserProvider interface {
 	UserByEmail(ctx context.Context, email string) (models.User, error)
 	UserByID(ctx context.Context, userID int64) (models.User, error)
 	UserList(ctx context.Context) ([]models.User, error)
+	UpdateUser(ctx context.Context, user models.User) error
 }
 
 var (
@@ -84,4 +85,24 @@ func (s *UserService) GetUserList(ctx context.Context) ([]models.User, error) {
 	}
 
 	return users, nil
+}
+
+func (s *UserService) UpdateUserAvarageDuration(ctx context.Context, userID int64, avarage_duration float32) error {
+	const op = "UserService.UpdateUserAvarageDuration"
+	log := s.log.WithField("op", op)
+
+	user, err := s.userProvider.UserByID(ctx, userID)
+	if err != nil {
+		log.WithError(err).Error("failed to get user by ID")
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("updating user avarage duration")
+	user.AvarageDuration = avarage_duration
+	err = s.userProvider.UpdateUser(ctx, user)
+	if err != nil {
+		log.WithError(err).Error("failed to update user avarage duration")
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
 }

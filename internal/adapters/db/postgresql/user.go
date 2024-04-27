@@ -43,3 +43,18 @@ func (p *Postgres) UserByID(ctx context.Context, userID int64) (models.User, err
 
 	return user, nil
 }
+
+func (p *Postgres) UserWithMinAverageDuration(ctx context.Context) (models.User, error) {
+	const op = "postgresql.Postgres.UserWithMinAverageDuration"
+
+	var user models.User
+
+	if err := p.db.WithContext(ctx).Order("avarage_duration").First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.User{}, fmt.Errorf("%s: %w", op, ErrUsersNotFound)
+		}
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return user, nil
+}

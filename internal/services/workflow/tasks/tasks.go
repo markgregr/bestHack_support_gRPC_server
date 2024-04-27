@@ -95,6 +95,7 @@ func (s *TaskService) CreateTask(ctx context.Context, title string, description 
 		AvarageDuration: avarage_duration,
 		ClusterID:       &cluster.ID,
 		Cluster:         &cluster,
+		Fire:            false,
 	}
 
 	log.WithField("task", task).Info("create tasks")
@@ -403,5 +404,31 @@ func (s *TaskService) AppointUserToTask(ctx context.Context, taskID int64) (mode
 		log.WithError(err).Error("failed to update user avarage duration")
 		return models.Task{}, err
 	}
+	return task, nil
+}
+
+func (s *TaskService) FireTask(ctx context.Context, taskID int64) (models.Task, error) {
+	const op = "TaskService.FireTask"
+	log := s.log.WithField("op", op)
+
+	task, err := s.taskProvider.TaskByID(ctx, taskID)
+	if err != nil {
+		if errors.Is(err, postgresql.ErrTaskNotFound) {
+			log.Warn("tasks not found", err)
+			return models.Task{}, ErrInvalidCredentials
+		}
+
+		log.WithError(err).Error("failed to get tasks")
+		return models.Task{}, err
+	}
+
+	task.Fire = true
+
+	log.Info("change tasks status")
+	if err := s.taskSaver.UpdateTask(ctx, taskID, task); err != nil {
+		log.WithError(err).Error("failed to update tasks")
+		return models.Task{}, err
+	}
+
 	return task, nil
 }

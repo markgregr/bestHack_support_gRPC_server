@@ -12,6 +12,7 @@ type Task struct {
 	FormedAt        *time.Time `json:"formed_at`
 	CompletedAt     *time.Time `json:"completed_at`
 	AvarageDuration float32    `json:"avarage_duratation`
+	Fire            bool       `json:"fire`
 
 	CaseID *int64 `json:"case_id`
 	Case   *Case  `gorm:"foreignKey:CaseID" json:"case`

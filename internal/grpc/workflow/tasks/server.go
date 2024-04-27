@@ -21,6 +21,7 @@ type TaskService interface {
 	RemoveCaseFromTask(ctx context.Context, taskID int64) (models.Task, error)
 	RemoveSolutionFromTask(ctx context.Context, taskID int64) (models.Task, error)
 	AppointUserToTask(ctx context.Context, taskID int64) (models.Task, error)
+	FireTask(ctx context.Context, taskID int64) (models.Task, error)
 }
 
 type serverAPI struct {
@@ -116,6 +117,17 @@ func (s *serverAPI) RemoveSolutionFromTask(ctx context.Context, req *tasksv1.Rem
 
 func (s *serverAPI) AppointUserToTask(ctx context.Context, req *tasksv1.AppointUserToTaskRequest) (*tasksv1.Task, error) {
 	task, err := s.taskService.AppointUserToTask(ctx, req.GetTaskId())
+	if err != nil {
+		if errors.Is(err, tasks.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return ConvertTaskToProto(task), nil
+}
+
+func (s *serverAPI) FireTask(ctx context.Context, req *tasksv1.FireTaskRequest) (*tasksv1.Task, error) {
+	task, err := s.taskService.FireTask(ctx, req.GetTaskId())
 	if err != nil {
 		if errors.Is(err, tasks.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")

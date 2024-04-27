@@ -214,7 +214,7 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 			return models.Task{}, err
 		}
 
-		err = s.userService.UpdateUserAvarageDuration(ctx, user.ID, user.AvarageDuration+task.AvarageDuration)
+		err = s.userService.UpdateUserAvarageDuration(ctx, user.ID, user.AvarageDuration-task.AvarageDuration)
 		if err != nil {
 			log.WithError(err).Error("failed to update user avarage duration")
 			return models.Task{}, err

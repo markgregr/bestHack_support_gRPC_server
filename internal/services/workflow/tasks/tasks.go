@@ -7,12 +7,15 @@ import (
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/adapters/db/postgresql"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/services/user"
+	"github.com/markgregr/bestHack_support_gRPC_server/pkg/csvsaver"
 	"github.com/sirupsen/logrus"
 	"time"
 )
 
 type TaskService struct {
 	log             *logrus.Logger
+	outputFileData  string
+	inputFileData   string
 	taskSaver       TaskSaver
 	taskProvider    TaskProvider
 	clusterSaver    ClusterSaver
@@ -49,9 +52,11 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
-func New(log *logrus.Logger, taskSaver TaskSaver, taskProvider TaskProvider, clusterProvider ClusterProvider, clusterSaver ClusterSaver, caseProvider CaseProvider, userService user.UserService) *TaskService {
+func New(log *logrus.Logger, inputFileData, outputFileData string, taskSaver TaskSaver, taskProvider TaskProvider, clusterProvider ClusterProvider, clusterSaver ClusterSaver, caseProvider CaseProvider, userService user.UserService) *TaskService {
 	return &TaskService{
 		log:             log,
+		outputFileData:  outputFileData,
+		inputFileData:   inputFileData,
 		taskSaver:       taskSaver,
 		taskProvider:    taskProvider,
 		clusterSaver:    clusterSaver,
@@ -176,6 +181,30 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 		task.Status = models.TaskStatusClosed
 		currTime := time.Now()
 		task.CompletedAt = &currTime
+
+		// Вычисление времени формирования и времени начала выполнения в секундах
+		formedAtUnix := task.FormedAt.Unix()
+		startedAtUnix := task.CreatedAt.Unix()
+
+		// Вычисление разницы в секундах
+		reactionTimeInSeconds := int(startedAtUnix - formedAtUnix)
+		durationInSeconds := int(currTime.Unix() - formedAtUnix)
+
+		clusterData := csvsaver.ClusterData{
+			ClusterIndex: int(task.Cluster.ClusterIndex),
+			ReactionTime: reactionTimeInSeconds,
+			DurationTime: durationInSeconds,
+		}
+		err = csvsaver.AddDataToJSON(s.outputFileData, clusterData, log.Logger)
+		if err != nil {
+			log.WithError(err).Error("failed to add data to JSON")
+			return models.Task{}, err
+		}
+		err = csvsaver.AvgCsv(s.inputFileData, s.outputFileData, log.Logger)
+		if err != nil {
+			log.WithError(err).Error("failed to calculate average")
+			return models.Task{}, err
+		}
 	default:
 		return models.Task{}, errors.New("invalid task status")
 	}

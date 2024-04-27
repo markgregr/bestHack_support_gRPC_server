@@ -369,7 +369,7 @@ func (s *TaskService) AppointUserToTask(ctx context.Context, taskID int64) (mode
 	const op = "TaskService.AppointUserToTask"
 	log := s.log.WithField("op", op)
 
-	user, err := s.taskProvider.UserMinAvarageDuration(ctx)
+	user, err := s.taskProvider.UserWithMinAverageDuration(ctx)
 	if err != nil {
 		log.WithError(err).Error("failed to get user with min avarage duration")
 		return models.Task{}, err

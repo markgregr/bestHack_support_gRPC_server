@@ -33,7 +33,7 @@ type TaskSaver interface {
 type TaskProvider interface {
 	TaskByID(ctx context.Context, taskID int64) (models.Task, error)
 	ListTasks(ctx context.Context, status models.TaskStatus) ([]models.Task, error)
-	UserMinAvarageDuration(ctx context.Context) (models.User, error)
+	UserWithMinAverageDuration(ctx context.Context) (models.User, error)
 }
 
 type ClusterSaver interface {

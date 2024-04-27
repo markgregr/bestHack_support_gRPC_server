@@ -91,7 +91,7 @@ func AvgCsv(inputFile, outputFile string, log *logrus.Logger) error {
 	}
 
 	// Открываем CSV файл для добавления данных
-	outFile, err := os.OpenFile("/app/data/output.csv", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	outFile, err := os.OpenFile("/app/data/output.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		log.WithError(err).Error("failed to open file")
 		return err

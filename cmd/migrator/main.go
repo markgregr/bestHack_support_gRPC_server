@@ -62,7 +62,7 @@ func setupLogger(env string) *logrus.Entry {
 		log.SetFormatter(&logrus.TextFormatter{
 			ForceColors: true,
 		})
-		log.SetLevel(logrus.WarnLevel)
+		log.SetLevel(logrus.ErrorLevel)
 	default:
 		log.SetOutput(fileHandler)
 		log.SetFormatter(&logrus.TextFormatter{

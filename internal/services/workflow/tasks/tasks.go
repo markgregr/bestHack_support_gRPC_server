@@ -187,7 +187,7 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 		startedAtUnix := task.CreatedAt.Unix()
 
 		// Вычисление разницы в секундах
-		reactionTimeInSeconds := int(startedAtUnix - formedAtUnix)
+		reactionTimeInSeconds := int(formedAtUnix - startedAtUnix)
 		durationInSeconds := int(currTime.Unix() - formedAtUnix)
 
 		clusterData := csvsaver.ClusterData{

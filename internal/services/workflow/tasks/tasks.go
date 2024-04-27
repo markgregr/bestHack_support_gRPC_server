@@ -97,7 +97,7 @@ func (s *TaskService) CreateTask(ctx context.Context, title string, description 
 		Cluster:         &cluster,
 	}
 
-	log.Info("create tasks")
+	log.WithField("task", task).Info("create tasks")
 	task, err = s.taskSaver.SaveTask(ctx, task)
 	if err != nil {
 		return models.Task{}, err

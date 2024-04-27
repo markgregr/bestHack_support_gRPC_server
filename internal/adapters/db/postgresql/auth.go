@@ -141,7 +141,7 @@ func (p *Postgres) DeleteUser(ctx context.Context, userID int64) error {
 	return nil
 }
 
-func (p *Postgres) UpdateUser(ctx context.Context, user *models.User) error {
+func (p *Postgres) UpdateUser(ctx context.Context, user models.User) error {
 	const op = "postgresql.Postgres.UpdateUser"
 
 	if err := p.db.WithContext(ctx).Save(user).Error; err != nil {

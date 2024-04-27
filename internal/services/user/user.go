@@ -18,7 +18,7 @@ type UserProvider interface {
 	UserByEmail(ctx context.Context, email string) (models.User, error)
 	UserByID(ctx context.Context, userID int64) (models.User, error)
 	UserList(ctx context.Context) ([]models.User, error)
-	UpdateUser(ctx context.Context, user *models.User) error
+	UpdateUser(ctx context.Context, user models.User) error
 }
 
 var (

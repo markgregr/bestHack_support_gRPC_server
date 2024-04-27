@@ -49,7 +49,6 @@ func setupLogger(env string, logsPathFile string) *logrus.Entry {
 
 	switch env {
 	case envLocal:
-		log.SetLevel(logrus.DebugLevel)
 		return setupPrettySlog(log)
 	case envDev:
 		log.SetOutput(logFile)

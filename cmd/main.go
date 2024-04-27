@@ -49,6 +49,7 @@ func setupLogger(env string, logsPathFile string) *logrus.Entry {
 
 	switch env {
 	case envLocal:
+		log.SetLevel(logrus.DebugLevel)
 		return setupPrettySlog(log)
 	case envDev:
 		log.SetOutput(logFile)
@@ -70,7 +71,7 @@ func setupLogger(env string, logsPathFile string) *logrus.Entry {
 			DisableColors: true,
 			FullTimestamp: true, // Добавляем временные метки к сообщениям
 		})
-		log.SetLevel(logrus.WarnLevel)
+		log.SetLevel(logrus.DebugLevel)
 	}
 
 	return logrus.NewEntry(log)

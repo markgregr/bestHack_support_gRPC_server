@@ -91,9 +91,9 @@ func AvgCsv(inputFile, outputFile string, log *logrus.Logger) error {
 	}
 
 	// Открываем CSV файл для добавления данных
-	outFile, err := os.OpenFile("/app/data/output.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	outFile, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		log.WithError(err).Error("failed to open file")
+		log.WithError(err).Error("failed to open CSV file")
 		return err
 	}
 	defer outFile.Close()
@@ -101,23 +101,28 @@ func AvgCsv(inputFile, outputFile string, log *logrus.Logger) error {
 	writer := csv.NewWriter(outFile)
 	defer writer.Flush()
 
-	// Записываем данные в CSV
+	// Write the header if the file is new or empty
+	info, err := outFile.Stat()
+	if err != nil {
+		log.WithError(err).Error("failed to stat CSV file")
+		return err
+	}
+	if info.Size() == 0 {
+		if err := writer.Write([]string{"ClusterIndex", "AvgDuration", "AvgReaction"}); err != nil {
+			log.WithError(err).Error("failed to write header")
+			return err
+		}
+	}
+
+	// Write data to CSV
 	for cluster, stats := range stats {
 		avgDuration := float64(stats.TotalDuration) / float64(stats.Count)
 		avgReaction := float64(stats.TotalReaction) / float64(stats.Count)
-
-		// Преобразуем числовые значения в строки перед записью
 		clusterStr := strconv.Itoa(cluster)
 		avgDurationStr := strconv.FormatFloat(avgDuration, 'f', -1, 64)
 		avgReactionStr := strconv.FormatFloat(avgReaction, 'f', -1, 64)
 
-		// Записываем строки в CSV
-		err := writer.Write([]string{
-			clusterStr,
-			avgDurationStr,
-			avgReactionStr,
-		})
-		if err != nil {
+		if err := writer.Write([]string{clusterStr, avgDurationStr, avgReactionStr}); err != nil {
 			log.WithError(err).Error("failed to write CSV row")
 			return err
 		}

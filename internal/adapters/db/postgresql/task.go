@@ -53,10 +53,6 @@ func (p *Postgres) SaveTask(ctx context.Context, task models.Task) (models.Task,
 
 func (p *Postgres) UpdateTask(ctx context.Context, id int64, task models.Task) error {
 	const op = "postgresql.Postgres.UpdateTask"
-
-	if err := p.db.WithContext(ctx).Model(&models.Task{}).Where("id = ?", id).Updates(&task).Error; err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	return nil
+	err := p.db.WithContext(ctx).Save(&task).Error
+	return err
 }

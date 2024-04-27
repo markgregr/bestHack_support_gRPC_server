@@ -26,7 +26,7 @@ func AddDataToJSON(jsonFile string, data ClusterData, log *logrus.Logger) error 
 	const op = "utils.CsvSaver.AddDataToJSON"
 	log.WithField("method", op)
 
-	file, err := os.ReadFile(jsonFile)
+	file, err := os.ReadFile("/app/data/input.json")
 	if err != nil {
 		log.WithError(err).Error("failed to open file")
 		return err

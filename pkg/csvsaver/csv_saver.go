@@ -63,7 +63,7 @@ func AvgCsv(inputFile, outputFile string, log *logrus.Logger) error {
 	const op = "utils.CsvSaver.AvgCsv"
 	log.WithField("method", op)
 
-	file, err := os.ReadFile(inputFile)
+	file, err := os.ReadFile("/app/data/input.json")
 	if err != nil {
 		log.WithError(err).Error("failed to open file")
 		return err
@@ -91,7 +91,7 @@ func AvgCsv(inputFile, outputFile string, log *logrus.Logger) error {
 	}
 
 	// Открываем CSV файл для добавления данных
-	outFile, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	outFile, err := os.OpenFile("/app/data/output.json", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		log.WithError(err).Error("failed to open file")
 		return err

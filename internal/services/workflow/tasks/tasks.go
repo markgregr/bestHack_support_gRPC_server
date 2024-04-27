@@ -294,3 +294,58 @@ func (s *TaskService) AddSolutionToTask(ctx context.Context, taskID int64, solut
 
 	return task, nil
 }
+
+func (s *TaskService) RemoveCaseFromTask(ctx context.Context, taskID int64) (models.Task, error) {
+	const op = "TaskService.RemoveCaseFromTask"
+	log := s.log.WithField("op", op)
+
+	log.Info("remove case from task")
+	task, err := s.taskProvider.TaskByID(ctx, taskID)
+	if err != nil {
+		if errors.Is(err, postgresql.ErrTaskNotFound) {
+			log.Warn("tasks not found", err)
+			return models.Task{}, ErrInvalidCredentials
+		}
+
+		log.WithError(err).Error("failed to get tasks")
+		return models.Task{}, err
+	}
+
+	task.CaseID = nil
+	task.Case = nil
+
+	log.Info("change tasks status")
+	if err := s.taskSaver.UpdateTask(ctx, taskID, task); err != nil {
+		log.WithError(err).Error("failed to update tasks")
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (s *TaskService) RemoveSolutionFromTask(ctx context.Context, taskID int64) (models.Task, error) {
+	const op = "TaskService.RemoveSolutionFromTask"
+	log := s.log.WithField("op", op)
+
+	log.Info("remove solution from task")
+	task, err := s.taskProvider.TaskByID(ctx, taskID)
+	if err != nil {
+		if errors.Is(err, postgresql.ErrTaskNotFound) {
+			log.Warn("tasks not found", err)
+			return models.Task{}, ErrInvalidCredentials
+		}
+
+		log.WithError(err).Error("failed to get tasks")
+		return models.Task{}, err
+	}
+
+	task.Solution = nil
+
+	log.Info("change tasks status")
+	if err := s.taskSaver.UpdateTask(ctx, taskID, task); err != nil {
+		log.WithError(err).Error("failed to update tasks")
+		return models.Task{}, err
+	}
+
+	return task, nil
+}

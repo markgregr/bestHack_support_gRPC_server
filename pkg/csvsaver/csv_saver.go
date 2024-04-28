@@ -24,6 +24,32 @@ type ClusterStats struct {
 	Count         int
 }
 
+// Helper functions
+func median(numbers []int) float64 {
+	sort.Ints(numbers)
+	n := len(numbers)
+	if n%2 == 0 {
+		return float64(numbers[n/2-1]+numbers[n/2]) / 2.0
+	}
+	return float64(numbers[n/2])
+}
+
+func mean(numbers []int) float64 {
+	total := 0
+	for _, number := range numbers {
+		total += number
+	}
+	return float64(total) / float64(len(numbers))
+}
+
+func stdDev(numbers []int, mean float64) float64 {
+	var sum float64
+	for _, number := range numbers {
+		sum += (float64(number) - mean) * (float64(number) - mean)
+	}
+	variance := sum / float64(len(numbers))
+	return math.Sqrt(variance)
+}
 func AddDataToJSON(jsonFile string, data ClusterData, log *logrus.Logger) error {
 	const op = "utils.CsvSaver.AddDataToJSON"
 	log.WithField("method", op)
@@ -61,38 +87,11 @@ func AddDataToJSON(jsonFile string, data ClusterData, log *logrus.Logger) error 
 	return nil
 }
 
-// Helper functions
-func median(numbers []int) float64 {
-	sort.Ints(numbers)
-	n := len(numbers)
-	if n%2 == 0 {
-		return float64(numbers[n/2-1]+numbers[n/2]) / 2.0
-	}
-	return float64(numbers[n/2])
-}
-
-func mean(numbers []int) float64 {
-	total := 0
-	for _, number := range numbers {
-		total += number
-	}
-	return float64(total) / float64(len(numbers))
-}
-
-func stdDev(numbers []int, mean float64) float64 {
-	var sum float64
-	for _, number := range numbers {
-		sum += (float64(number) - mean) * (float64(number) - mean)
-	}
-	variance := sum / float64(len(numbers))
-	return math.Sqrt(variance)
-}
-
 func StatisticsCsv(inputFile, outputFile string, log *logrus.Logger) error {
 	const op = "utils.CsvSaver.StatisticsCsv"
 	log.WithField("method", op)
 
-	file, err := os.ReadFile(inputFile)
+	file, err := os.ReadFile("/app/data/input.json")
 	if err != nil {
 		log.WithError(err).Error("failed to open JSON file")
 		return err
@@ -115,9 +114,9 @@ func StatisticsCsv(inputFile, outputFile string, log *logrus.Logger) error {
 	}
 
 	// Open CSV file for writing
-	outFile, err := os.Create(outputFile)
+	outFile, err := os.OpenFile("/app/data/output.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		log.WithError(err).Error("failed to create CSV file")
+		log.WithError(err).Error("failed to open file")
 		return err
 	}
 	defer outFile.Close()

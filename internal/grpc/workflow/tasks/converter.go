@@ -58,6 +58,7 @@ func ConvertTaskToProto(task models.Task) *tasksv1.Task {
 		Title:       task.Title,
 		Description: task.Description,
 		Solution:    solution,
+		Fire:        task.Fire,
 		Status:      tasksv1.TaskStatus(task.Status),
 		Case: &tasksv1.Case{Id: caseID,
 			ClusterId: caseClusterID,

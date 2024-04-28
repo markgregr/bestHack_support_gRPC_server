@@ -23,7 +23,7 @@ type TaskService interface {
 	RemoveSolutionFromTask(ctx context.Context, taskID int64) (models.Task, error)
 	AppointUserToTask(ctx context.Context, taskID int64) (models.Task, error)
 	FireTask(ctx context.Context, taskID int64) (models.Task, error)
-	ListTasksByUserID(ctx context.Context, userID int64) ([]models.Task, error)
+	ListTasksByUserID(ctx context.Context, userID int64, status models.TaskStatus) ([]models.Task, error)
 	ListUsers(ctx context.Context, empty *empty.Empty) ([]models.User, error)
 }
 
@@ -141,7 +141,7 @@ func (s *serverAPI) FireTask(ctx context.Context, req *tasksv1.FireTaskRequest) 
 }
 
 func (s *serverAPI) ListTasksByUserID(ctx context.Context, req *tasksv1.ListTasksByUserIDRequest) (*tasksv1.ListTasksResponse, error) {
-	tasks, err := s.taskService.ListTasksByUserID(ctx, req.GetUserId())
+	tasks, err := s.taskService.ListTasksByUserID(ctx, req.GetUserId(), models.TaskStatus(req.GetStatus()))
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}

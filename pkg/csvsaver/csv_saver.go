@@ -4,9 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"github.com/sirupsen/logrus"
-	"math"
 	"os"
-	"sort"
 	"strconv"
 )
 
@@ -24,32 +22,6 @@ type ClusterStats struct {
 	Count         int
 }
 
-// Helper functions
-func median(numbers []int) float64 {
-	sort.Ints(numbers)
-	n := len(numbers)
-	if n%2 == 0 {
-		return float64(numbers[n/2-1]+numbers[n/2]) / 2.0
-	}
-	return float64(numbers[n/2])
-}
-
-func mean(numbers []int) float64 {
-	total := 0
-	for _, number := range numbers {
-		total += number
-	}
-	return float64(total) / float64(len(numbers))
-}
-
-func stdDev(numbers []int, mean float64) float64 {
-	var sum float64
-	for _, number := range numbers {
-		sum += (float64(number) - mean) * (float64(number) - mean)
-	}
-	variance := sum / float64(len(numbers))
-	return math.Sqrt(variance)
-}
 func AddDataToJSON(jsonFile string, data ClusterData, log *logrus.Logger) error {
 	const op = "utils.CsvSaver.AddDataToJSON"
 	log.WithField("method", op)
@@ -87,36 +59,41 @@ func AddDataToJSON(jsonFile string, data ClusterData, log *logrus.Logger) error 
 	return nil
 }
 
-func StatisticsCsv(inputFile, outputFile string, log *logrus.Logger) error {
-	const op = "utils.CsvSaver.StatisticsCsv"
+func AvgCsv(inputFile, outputFile string, log *logrus.Logger) error {
+	const op = "utils.CsvSaver.AvgCsv"
 	log.WithField("method", op)
 
 	file, err := os.ReadFile("/app/data/input.json")
 	if err != nil {
-		log.WithError(err).Error("failed to open JSON file")
+		log.WithError(err).Error("failed to open file")
 		return err
 	}
 
-	// Parse JSON data
+	// Парсим JSON данные
 	var data []ClusterData
 	err = json.Unmarshal(file, &data)
 	if err != nil {
 		log.WithError(err).Error("failed to unmarshal JSON")
 		return err
 	}
+	// Словарь для сбора статистики
+	stats := make(map[int]*ClusterStats)
 
-	// Aggregate data by cluster
-	clusterDurations := make(map[int][]int)
-	clusterReactions := make(map[int][]int)
+	// Собираем статистику по каждому кластеру
 	for _, item := range data {
-		clusterDurations[item.ClusterIndex] = append(clusterDurations[item.ClusterIndex], item.DurationTime)
-		clusterReactions[item.ClusterIndex] = append(clusterReactions[item.ClusterIndex], item.ReactionTime)
+		if _, exists := stats[item.ClusterIndex]; !exists {
+			stats[item.ClusterIndex] = &ClusterStats{}
+		}
+		cluster := stats[item.ClusterIndex]
+		cluster.TotalDuration += item.DurationTime
+		cluster.TotalReaction += item.ReactionTime
+		cluster.Count++
 	}
 
-	// Open CSV file for writing
-	outFile, err := os.OpenFile("/app/data/output.csv", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	// Открываем CSV файл для добавления данных
+	outFile, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		log.WithError(err).Error("failed to open file")
+		log.WithError(err).Error("failed to open CSV file")
 		return err
 	}
 	defer outFile.Close()
@@ -124,37 +101,32 @@ func StatisticsCsv(inputFile, outputFile string, log *logrus.Logger) error {
 	writer := csv.NewWriter(outFile)
 	defer writer.Flush()
 
-	// Write header
-	header := []string{"ClusterIndex", "AvgDuration", "MedianDuration", "StdDevDuration", "AvgReaction", "MedianReaction", "StdDevReaction"}
-	if err := writer.Write(header); err != nil {
-		log.WithError(err).Error("failed to write header")
+	// Write the header if the file is new or empty
+	info, err := outFile.Stat()
+	if err != nil {
+		log.WithError(err).Error("failed to stat CSV file")
 		return err
 	}
-
-	// Write data
-	for cluster, durations := range clusterDurations {
-		reactions := clusterReactions[cluster]
-		avgDuration := mean(durations)
-		medianDuration := median(durations)
-		stdDevDuration := stdDev(durations, avgDuration)
-		avgReaction := mean(reactions)
-		medianReaction := median(reactions)
-		stdDevReaction := stdDev(reactions, avgReaction)
-		record := []string{
-			strconv.Itoa(cluster),
-			strconv.FormatFloat(avgDuration, 'f', 2, 64),
-			strconv.FormatFloat(medianDuration, 'f', 2, 64),
-			strconv.FormatFloat(stdDevDuration, 'f', 2, 64),
-			strconv.FormatFloat(avgReaction, 'f', 2, 64),
-			strconv.FormatFloat(medianReaction, 'f', 2, 64),
-			strconv.FormatFloat(stdDevReaction, 'f', 2, 64),
-		}
-		if err := writer.Write(record); err != nil {
-			log.WithError(err).Error("failed to write record")
+	if info.Size() == 0 {
+		if err := writer.Write([]string{"ClusterIndex", "AvgDuration", "AvgReaction"}); err != nil {
+			log.WithError(err).Error("failed to write header")
 			return err
 		}
 	}
 
-	log.Info("Statistical data saved to CSV for analysis")
+	// Write data to CSV
+	for cluster, stats := range stats {
+		avgDuration := float64(stats.TotalDuration) / float64(stats.Count)
+		avgReaction := float64(stats.TotalReaction) / float64(stats.Count)
+		clusterStr := strconv.Itoa(cluster)
+		avgDurationStr := strconv.FormatFloat(avgDuration, 'f', -1, 64)
+		avgReactionStr := strconv.FormatFloat(avgReaction, 'f', -1, 64)
+
+		if err := writer.Write([]string{clusterStr, avgDurationStr, avgReactionStr}); err != nil {
+			log.WithError(err).Error("failed to write CSV row")
+			return err
+		}
+	}
+	log.Info("data saved to CSV")
 	return nil
 }

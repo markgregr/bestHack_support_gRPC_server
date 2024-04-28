@@ -10,6 +10,7 @@ import (
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/services/user"
 	"github.com/markgregr/bestHack_support_gRPC_server/pkg/csvsaver"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
 	"time"
 )
@@ -477,7 +478,7 @@ func (s *TaskService) ListTasksByUserID(ctx context.Context, userID int64) ([]mo
 	return tasks, nil
 }
 
-func (s *TaskService) ListUsers(ctx context.Context) ([]models.User, error) {
+func (s *TaskService) ListUsers(ctx context.Context, empty *emptypb.Empty) ([]models.User, error) {
 	const op = "TaskService.ListUsers"
 	log := s.log.WithField("op", op)
 

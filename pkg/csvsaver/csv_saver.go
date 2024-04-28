@@ -47,7 +47,11 @@ func stdDev(numbers []int, mean float64) float64 {
 	for _, number := range numbers {
 		sum += (float64(number) - mean) * (float64(number) - mean)
 	}
-	variance := sum / float64(len(numbers))
+	n := len(numbers)
+	if n < 2 { // Если в выборке меньше двух элементов, среднеквадратическое отклонение не определено
+		return 0
+	}
+	variance := sum / float64(n-1) // Используем n-1 для несмещённой оценки дисперсии
 	return math.Sqrt(variance)
 }
 

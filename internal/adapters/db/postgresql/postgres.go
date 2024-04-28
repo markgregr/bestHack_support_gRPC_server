@@ -1,6 +1,7 @@
 package postgresql
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/config"
@@ -13,6 +14,11 @@ import (
 
 type Postgres struct {
 	db *gorm.DB
+}
+
+func (p *Postgres) ListTasksUserID(ctx context.Context, userID int64) ([]models.Task, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // New создает новый экземпляр Postgres

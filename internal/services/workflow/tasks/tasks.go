@@ -39,7 +39,7 @@ type TaskProvider interface {
 	TaskByID(ctx context.Context, taskID int64) (models.Task, error)
 	ListTasks(ctx context.Context, status models.TaskStatus) ([]models.Task, error)
 	UserWithMinAverageDuration(ctx context.Context) (models.User, error)
-	ListTasksByUserID(ctx context.Context, userID int64) ([]models.Task, error)
+	ListTasksUserID(ctx context.Context, userID int64) ([]models.Task, error)
 }
 
 type ClusterSaver interface {
@@ -469,7 +469,7 @@ func (s *TaskService) ListTasksByUserID(ctx context.Context, userID int64) ([]mo
 	log := s.log.WithField("op", op)
 
 	log.Info("list tasks by user id")
-	tasks, err := s.taskProvider.ListTasksByUserID(ctx, userID)
+	tasks, err := s.taskProvider.ListTasksUserID(ctx, userID)
 	if err != nil {
 		log.WithError(err).Error("failed to list tasks")
 		return nil, err

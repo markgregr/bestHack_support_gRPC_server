@@ -1,7 +1,9 @@
 package tasks
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/adapters/db/postgresql"
@@ -9,6 +11,7 @@ import (
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/services/user"
 	"github.com/markgregr/bestHack_support_gRPC_server/pkg/csvsaver"
 	"github.com/sirupsen/logrus"
+	"net/http"
 	"time"
 )
 
@@ -16,6 +19,7 @@ type TaskService struct {
 	log             *logrus.Logger
 	outputFileData  string
 	inputFileData   string
+	AnalURL         string
 	taskSaver       TaskSaver
 	taskProvider    TaskProvider
 	clusterSaver    ClusterSaver
@@ -53,11 +57,16 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
-func New(log *logrus.Logger, inputFileData, outputFileData string, taskSaver TaskSaver, taskProvider TaskProvider, clusterProvider ClusterProvider, clusterSaver ClusterSaver, caseProvider CaseProvider, userService user.UserService) *TaskService {
+type NotficationRequest struct {
+	Username string `json:"username"`
+}
+
+func New(log *logrus.Logger, inputFileData, outputFileData, AnalURL string, taskSaver TaskSaver, taskProvider TaskProvider, clusterProvider ClusterProvider, clusterSaver ClusterSaver, caseProvider CaseProvider, userService user.UserService) *TaskService {
 	return &TaskService{
 		log:             log,
 		outputFileData:  outputFileData,
 		inputFileData:   inputFileData,
+		AnalURL:         AnalURL,
 		taskSaver:       taskSaver,
 		taskProvider:    taskProvider,
 		clusterSaver:    clusterSaver,
@@ -408,6 +417,22 @@ func (s *TaskService) AppointUserToTask(ctx context.Context, taskID int64) (mode
 		log.WithError(err).Error("failed to update user avarage duration")
 		return models.Task{}, err
 	}
+
+	requestBody, err := json.Marshal(NotficationRequest{
+		Username: user.TelegramUsername,
+	})
+	if err != nil {
+		log.WithError(err).Error("failed to marshal request body")
+		return models.Task{}, err
+	}
+
+	resp, err := http.Post(s.AnalURL, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		log.WithError(err).Error("failed to send request")
+		return models.Task{}, err
+	}
+	defer resp.Body.Close()
+
 	return task, nil
 }
 

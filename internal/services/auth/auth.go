@@ -37,7 +37,7 @@ type AuthenticatedUserSaver interface {
 type UserProvider interface {
 	UserByEmail(ctx context.Context, email string) (models.User, error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
-	UpdateUser(ctx context.Context, user models.User) (models.User, error)
+	UpdateUser(ctx context.Context, user models.User) error
 }
 
 type AppProvider interface {
@@ -246,7 +246,7 @@ func (s *AuthService) BotAuth(ctx context.Context, email, password, username str
 
 	user.TelegramUsername = username
 
-	user, err = s.userProvider.UpdateUser(ctx, user)
+	err = s.userProvider.UpdateUser(ctx, user)
 	if err != nil {
 		log.WithError(err).Error("failed to update user")
 		return nil, fmt.Errorf("%s: %w", err)

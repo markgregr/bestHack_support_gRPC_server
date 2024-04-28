@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	Env      string `env:"GRPC_SERVER_ENV" env-default:"local"`
-	LogsPath string `env:"GRPC_SERVER_LOGS_PATH_FILE" env-required:"true"`
-	FileData FileData
-	GRPC     GRPCConfig
-	Postgres PostgresConfig
-	JWT      JWTConfig
-	Redis    RedisConfig
+	Env                 string `env:"GRPC_SERVER_ENV" env-default:"local"`
+	LogsPath            string `env:"GRPC_SERVER_LOGS_PATH_FILE" env-required:"true"`
+	AnalyticsServiceURL string `env:"GRPC_SERVER_ANALYTICS_SERVICE_URL" env-required:"true"`
+	FileData            FileData
+	GRPC                GRPCConfig
+	Postgres            PostgresConfig
+	JWT                 JWTConfig
+	Redis               RedisConfig
 }
 
 func MustLoad() *Config {

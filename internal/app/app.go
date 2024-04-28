@@ -32,7 +32,7 @@ func New(log *logrus.Entry, cfg *config.Config) *App {
 
 	userService := user.New(log.Logger, postgre)
 
-	taskService := tasks.New(log.Logger, cfg.FileData.InputFile, cfg.FileData.OutputFile, postgre, postgre, postgre, postgre, postgre, *userService)
+	taskService := tasks.New(log.Logger, cfg.FileData.InputFile, cfg.FileData.OutputFile, cfg.AnalyticsServiceURL, postgre, postgre, postgre, postgre, postgre, *userService)
 
 	caseService := cases.New(log.Logger, postgre, postgre, postgre, *userService)
 

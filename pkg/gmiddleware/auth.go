@@ -42,11 +42,6 @@ func (s *Auth) AuthFunc(ctx context.Context) (context.Context, error) {
 
 	if strings.HasPrefix(method, "/auth.Auth/Register") ||
 		strings.HasPrefix(method, "/auth.Auth/Login") ||
-		strings.HasPrefix(method, "/auth.Auth/IsAdmin") ||
-		strings.HasPrefix(method, "/cases.CaseService/CreateCase") ||
-		strings.HasPrefix(method, "/cases.CaseService/GetCase") ||
-		strings.HasPrefix(method, "/cases.CaseService/ListCases") ||
-		strings.HasPrefix(method, "/cases.CaseService/GetCluster") ||
 		strings.HasPrefix(method, "/auth.Auth/BotAuth") {
 		return ctx, nil
 	}

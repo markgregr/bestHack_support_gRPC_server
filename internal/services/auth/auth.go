@@ -37,6 +37,7 @@ type AuthenticatedUserSaver interface {
 type UserProvider interface {
 	UserByEmail(ctx context.Context, email string) (models.User, error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	UpdateUser(ctx context.Context, user models.User) (models.User, error)
 }
 
 type AppProvider interface {
@@ -218,4 +219,40 @@ func (s *AuthService) Logout(ctx context.Context, empty *emptypb.Empty) (*emptyp
 	}
 
 	return nil, nil
+}
+
+// BotAuth выполняет аутентификацию бота
+func (s *AuthService) BotAuth(ctx context.Context, email, password, username string, appID int) (*emptypb.Empty, error) {
+	const op = "auth.Auth.BotAuth"
+	log := s.log.WithField("op", op).WithField("email", email)
+
+	log.Info("login bot")
+
+	user, err := s.userProvider.UserByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, postgresql.ErrUserNotFound) {
+			log.Warn("user not found", err)
+			return nil, fmt.Errorf("%s: %w", ErrInvalidCredentials)
+		}
+
+		log.WithError(err).Error("failed to get user")
+		return nil, fmt.Errorf("%s: %w", err)
+	}
+
+	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
+		log.Warn("invalid password ", err)
+		return nil, fmt.Errorf("%s: %w", ErrInvalidCredentials)
+	}
+
+	user.TelegramUsername = username
+
+	user, err = s.userProvider.UpdateUser(ctx, user)
+	if err != nil {
+		log.WithError(err).Error("failed to update user")
+		return nil, fmt.Errorf("%s: %w", err)
+	}
+
+	log.Info("bot logged in successfully")
+
+	return &emptypb.Empty{}, nil
 }

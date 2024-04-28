@@ -16,6 +16,7 @@ type AuthService interface {
 	RegisterNewUser(ctx context.Context, email, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (isAdmin bool, err error)
 	Logout(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error)
+	BotAuth(ctx context.Context, email, password, username string, appID int) (*emptypb.Empty, error)
 }
 
 type serverAPI struct {
@@ -66,4 +67,12 @@ func (s *serverAPI) Logout(ctx context.Context, empty *emptypb.Empty) (*emptypb.
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (s *serverAPI) BotAuth(ctx context.Context, req *ssov1.BotAuthRequest) (*emptypb.Empty, error) {
+	_, err := s.auth.BotAuth(ctx, req.GetEmail(), req.GetPassword(), req.GetUsername(), int(req.GetAppId()))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return nil, status.Error(codes.Unimplemented, "method not implemented")
 }

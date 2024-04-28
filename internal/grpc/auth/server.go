@@ -74,5 +74,5 @@ func (s *serverAPI) BotAuth(ctx context.Context, req *ssov1.BotAuthRequest) (*em
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
-	return nil, status.Error(codes.Unimplemented, "method not implemented")
+	return &emptypb.Empty{}, nil
 }

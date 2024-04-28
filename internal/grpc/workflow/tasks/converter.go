@@ -48,9 +48,11 @@ func ConvertTaskToProto(task models.Task) *tasksv1.Task {
 
 	var userID int64
 	var userEmail string
+	var avarageDuration float32
 	if task.User != nil {
 		userID = task.User.ID
 		userEmail = task.User.Email
+		avarageDuration = task.User.AvarageDuration
 	}
 
 	return &tasksv1.Task{
@@ -73,8 +75,9 @@ func ConvertTaskToProto(task models.Task) *tasksv1.Task {
 		FormedAt:    formedAt,
 		CompletedAt: completedAt,
 		User: &tasksv1.User{
-			Id:    userID,
-			Email: userEmail,
+			Id:              userID,
+			Email:           userEmail,
+			AvarageDuration: avarageDuration,
 		},
 	}
 }
@@ -85,4 +88,20 @@ func ConvertTaskListToProto(tasks []models.Task) []*tasksv1.Task {
 		protoTasks = append(protoTasks, ConvertTaskToProto(task))
 	}
 	return protoTasks
+}
+
+func ConvertUserToProto(user models.User) *tasksv1.User {
+	return &tasksv1.User{
+		Id:              user.ID,
+		Email:           user.Email,
+		AvarageDuration: user.AvarageDuration,
+	}
+}
+
+func ConvertUserListToProto(users []models.User) []*tasksv1.User {
+	protoUsers := make([]*tasksv1.User, 0, len(users))
+	for _, user := range users {
+		protoUsers = append(protoUsers, ConvertUserToProto(user))
+	}
+	return protoUsers
 }

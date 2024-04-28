@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"errors"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/services/workflow/tasks"
 	tasksv1 "github.com/markgregr/bestHack_support_protos/gen/go/workflow/tasks"
@@ -22,6 +23,8 @@ type TaskService interface {
 	RemoveSolutionFromTask(ctx context.Context, taskID int64) (models.Task, error)
 	AppointUserToTask(ctx context.Context, taskID int64) (models.Task, error)
 	FireTask(ctx context.Context, taskID int64) (models.Task, error)
+	ListTasksByUserID(ctx context.Context, userID int64) ([]models.Task, error)
+	ListUsers(ctx context.Context, empty *empty.Empty) ([]models.User, error)
 }
 
 type serverAPI struct {
@@ -135,4 +138,20 @@ func (s *serverAPI) FireTask(ctx context.Context, req *tasksv1.FireTaskRequest) 
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return ConvertTaskToProto(task), nil
+}
+
+func (s *serverAPI) ListTasksByUserID(ctx context.Context, req *tasksv1.ListTasksByUserIDRequest) (*tasksv1.ListTasksResponse, error) {
+	tasks, err := s.taskService.ListTasksByUserID(ctx, req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &tasksv1.ListTasksResponse{Tasks: ConvertTaskListToProto(tasks)}, nil
+}
+
+func (s *serverAPI) ListUsers(ctx context.Context, req *empty.Empty) (*tasksv1.ListUsersResponse, error) {
+	users, err := s.taskService.ListUsers(ctx, req)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &tasksv1.ListUsersResponse{Users: ConvertUserListToProto(users)}, nil
 }

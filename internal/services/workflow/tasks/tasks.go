@@ -31,12 +31,14 @@ type TaskService struct {
 type TaskSaver interface {
 	SaveTask(ctx context.Context, task models.Task) (createdTask models.Task, err error)
 	UpdateTask(ctx context.Context, id int64, task models.Task) error
+	UserList(ctx context.Context) ([]models.User, error)
 }
 
 type TaskProvider interface {
 	TaskByID(ctx context.Context, taskID int64) (models.Task, error)
 	ListTasks(ctx context.Context, status models.TaskStatus) ([]models.Task, error)
 	UserWithMinAverageDuration(ctx context.Context) (models.User, error)
+	ListTasksByUserID(ctx context.Context, userID int64) ([]models.Task, error)
 }
 
 type ClusterSaver interface {
@@ -459,4 +461,32 @@ func (s *TaskService) FireTask(ctx context.Context, taskID int64) (models.Task, 
 	}
 
 	return task, nil
+}
+
+func (s *TaskService) ListTasksByUserID(ctx context.Context, userID int64) ([]models.Task, error) {
+	const op = "TaskService.ListTasksByUserID"
+	log := s.log.WithField("op", op)
+
+	log.Info("list tasks by user id")
+	tasks, err := s.taskProvider.ListTasksByUserID(ctx, userID)
+	if err != nil {
+		log.WithError(err).Error("failed to list tasks")
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func (s *TaskService) ListUsers(ctx context.Context) ([]models.User, error) {
+	const op = "TaskService.ListUsers"
+	log := s.log.WithField("op", op)
+
+	log.Info("list users")
+	users, err := s.taskSaver.UserList(ctx)
+	if err != nil {
+		log.WithError(err).Error("failed to list users")
+		return nil, err
+	}
+
+	return users, nil
 }

@@ -56,3 +56,14 @@ func (p *Postgres) UpdateTask(ctx context.Context, id int64, task models.Task) e
 	err := p.db.WithContext(ctx).Save(&task).Error
 	return err
 }
+
+func (p *Postgres) ListTaskByUserID(ctx context.Context, userID int64) ([]models.Task, error) {
+	const op = "postgresql.Postgres.ListTaskByUserID"
+
+	var tasks []models.Task
+	if err := p.db.WithContext(ctx).Joins("User").Joins("Case").Joins("Cluster").Where("tasks.user_id = ?", userID).Find(&tasks).Error; err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return tasks, nil
+}

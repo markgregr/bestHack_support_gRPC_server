@@ -220,7 +220,7 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 			log.WithError(err).Error("failed to add data to JSON")
 			return models.Task{}, err
 		}
-		err = csvsaver.AvgCsv(s.inputFileData, s.outputFileData, log.Logger)
+		err = csvsaver.StatisticsCsv(s.inputFileData, s.outputFileData, log.Logger)
 		if err != nil {
 			log.WithError(err).Error("failed to calculate average")
 			return models.Task{}, err

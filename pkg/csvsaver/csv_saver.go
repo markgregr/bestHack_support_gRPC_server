@@ -10,10 +10,55 @@ import (
 	"strconv"
 )
 
+// Структура для элементов JSON
 type ClusterData struct {
 	ClusterIndex int `json:"cluster_index"`
 	DurationTime int `json:"duration_time"`
 	ReactionTime int `json:"reaction_time"`
+}
+
+// Структура для хранения статистики
+type ClusterStats struct {
+	TotalDuration int
+	TotalReaction int
+	Count         int
+}
+
+func AddDataToJSON(jsonFile string, data ClusterData, log *logrus.Logger) error {
+	const op = "utils.CsvSaver.AddDataToJSON"
+	log.WithField("method", op)
+
+	file, err := os.ReadFile("/app/data/input.json")
+	if err != nil {
+		log.WithError(err).Error("failed to open file")
+		return err
+	}
+
+	// Парсим JSON данные
+	var jsonData []ClusterData
+	err = json.Unmarshal(file, &jsonData)
+	if err != nil {
+		log.WithError(err).Error("failed to unmarshal JSON")
+		return err
+	}
+
+	// Добавляем новые данные
+	jsonData = append(jsonData, data)
+
+	// Сохраняем обновленные данные
+	newData, err := json.Marshal(jsonData)
+	if err != nil {
+		log.WithError(err).Error("failed to marshal JSON")
+		return err
+	}
+
+	err = os.WriteFile("/app/data/input.json", newData, 0666)
+	if err != nil {
+		log.WithError(err).Error("failed to write file")
+		return err
+	}
+	log.Info("data added to JSON")
+	return nil
 }
 
 // Helper functions

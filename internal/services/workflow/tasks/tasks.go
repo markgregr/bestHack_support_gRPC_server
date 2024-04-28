@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/adapters/db/postgresql"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/services/user"
@@ -76,7 +75,7 @@ func New(log *logrus.Logger, inputFileData, outputFileData, AnalURL string, task
 	}
 }
 
-func (s *TaskService) CreateTask(ctx context.Context, title string, description string, clusterIndex int64, frequency int64, avarage_duration float32) (models.Task, error) {
+func (s *TaskService) CreateTask(ctx context.Context, title string, description string, clusterIndex int64, clusterName string, frequency int64, avarage_duration float32) (models.Task, error) {
 	const op = "TaskService.CreateTask"
 	log := s.log.WithField("op", op)
 
@@ -86,7 +85,7 @@ func (s *TaskService) CreateTask(ctx context.Context, title string, description 
 		log.Warn("cluster not found", err)
 		cluster = models.Cluster{
 			ClusterIndex: clusterIndex,
-			Name:         "Cluster " + fmt.Sprint(clusterIndex),
+			Name:         clusterName,
 			Frequency:    frequency,
 		}
 

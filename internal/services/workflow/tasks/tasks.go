@@ -387,6 +387,10 @@ func (s *TaskService) AppointUserToTask(ctx context.Context, taskID int64) (mode
 		return models.Task{}, err
 	}
 
+	if task.User != nil {
+		return models.Task{}, errors.New("user already appointed")
+	}
+
 	task.UserID = &user.ID
 	task.User = &user
 

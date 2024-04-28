@@ -1,10 +1,9 @@
-package csvsaver
+package dataprocessing
 
 import (
 	"encoding/csv"
 	"encoding/json"
 	"github.com/sirupsen/logrus"
-	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -40,19 +39,6 @@ func mean(numbers []int) float64 {
 		total += number
 	}
 	return float64(total) / float64(len(numbers))
-}
-
-func stdDev(numbers []int, mean float64) float64 {
-	var sum float64
-	for _, number := range numbers {
-		sum += (float64(number) - mean) * (float64(number) - mean)
-	}
-	n := len(numbers)
-	if n < 2 { // Если в выборке меньше двух элементов, среднеквадратическое отклонение не определено
-		return 0
-	}
-	variance := sum / float64(n-1) // Используем n-1 для несмещённой оценки дисперсии
-	return math.Sqrt(variance)
 }
 
 func AddDataToJSON(jsonFile string, data ClusterData, log *logrus.Logger) error {
@@ -139,18 +125,14 @@ func AvgCsv(inputFile, outputFile string, log *logrus.Logger) error {
 		reactions := clusterReactions[cluster]
 		avgDuration := mean(durations)
 		medianDuration := median(durations)
-		stdDevDuration := stdDev(durations, avgDuration)
 		avgReaction := mean(reactions)
 		medianReaction := median(reactions)
-		stdDevReaction := stdDev(reactions, avgReaction)
 		record := []string{
 			strconv.Itoa(cluster),
 			strconv.FormatFloat(avgDuration, 'f', 2, 64),
 			strconv.FormatFloat(medianDuration, 'f', 2, 64),
-			strconv.FormatFloat(stdDevDuration, 'f', 2, 64),
 			strconv.FormatFloat(avgReaction, 'f', 2, 64),
 			strconv.FormatFloat(medianReaction, 'f', 2, 64),
-			strconv.FormatFloat(stdDevReaction, 'f', 2, 64),
 		}
 		if err := writer.Write(record); err != nil {
 			log.WithError(err).Error("failed to write record")

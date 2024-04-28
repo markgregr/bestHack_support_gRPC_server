@@ -8,7 +8,7 @@ import (
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/adapters/db/postgresql"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/domain/models"
 	"github.com/markgregr/bestHack_support_gRPC_server/internal/services/user"
-	"github.com/markgregr/bestHack_support_gRPC_server/pkg/csvsaver"
+	"github.com/markgregr/bestHack_support_gRPC_server/pkg/dataprocessing"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
@@ -210,17 +210,17 @@ func (s *TaskService) ChangeTaskStatus(ctx context.Context, taskID int64) (model
 		reactionTimeInSeconds := int(formedAtUnix - startedAtUnix)
 		durationInSeconds := int(currTime.Unix() - formedAtUnix)
 
-		clusterData := csvsaver.ClusterData{
+		clusterData := dataprocessing.ClusterData{
 			ClusterIndex: int(task.Cluster.ClusterIndex),
 			ReactionTime: reactionTimeInSeconds,
 			DurationTime: durationInSeconds,
 		}
-		err = csvsaver.AddDataToJSON(s.outputFileData, clusterData, log.Logger)
+		err = dataprocessing.AddDataToJSON(s.outputFileData, clusterData, log.Logger)
 		if err != nil {
 			log.WithError(err).Error("failed to add data to JSON")
 			return models.Task{}, err
 		}
-		err = csvsaver.AvgCsv(s.inputFileData, s.outputFileData, log.Logger)
+		err = dataprocessing.AvgCsv(s.inputFileData, s.outputFileData, log.Logger)
 		if err != nil {
 			log.WithError(err).Error("failed to calculate average")
 			return models.Task{}, err
